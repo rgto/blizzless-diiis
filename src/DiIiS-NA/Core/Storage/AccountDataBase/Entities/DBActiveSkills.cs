@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBActiveSkills : Entity
+	public class DBActiveSkills
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual DBToon DBToon { get; set; }

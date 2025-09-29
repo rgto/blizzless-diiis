@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBGuild : Entity
+	public class DBGuild
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual string Name { get; set; }

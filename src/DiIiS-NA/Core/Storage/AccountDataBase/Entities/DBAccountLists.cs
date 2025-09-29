@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBAccountLists : Entity
+	public class DBAccountLists
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual DBAccount ListOwner { get; set; }

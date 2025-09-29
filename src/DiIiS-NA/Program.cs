@@ -93,7 +93,7 @@ namespace DiIiS_NA
             AnsiConsole.MarkupLine("");
             AnsiConsole.MarkupLine("");
         }
-        
+
         static async Task StartAsync(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
@@ -260,7 +260,8 @@ namespace DiIiS_NA
                 while (!IsCancellationRequested())
                 {
                     var line = Console.ReadLine();
-                    if(line == null){
+                    if (line == null)
+                    {
                         continue;
                     }
                     if (line == "!q" || line == "!quit" || line == "!exit")
@@ -280,9 +281,9 @@ namespace DiIiS_NA
                     {
                         if (IsTargetEnabled("ansi"))
                             Console.Clear();
-                        
+
                         MPQStorage.Data.SnoBreakdown(
-                            line.Equals("!sno 1", StringComparison.OrdinalIgnoreCase) || 
+                            line.Equals("!sno 1", StringComparison.OrdinalIgnoreCase) ||
                             line.Equals("!sno true", StringComparison.OrdinalIgnoreCase)
                         );
                         continue;
@@ -297,7 +298,7 @@ namespace DiIiS_NA
                     Logger.Info(
                         $"Server is shutting down in 1 minute, $[blue]${PlayerManager.OnlinePlayers.Count} players$[/]$ are still online.");
                     PlayerManager.SendWhisper("Server is shutting down in 1 minute.");
-                 
+
                     await Task.Delay(TimeSpan.FromMinutes(1));
                 }
 
@@ -319,7 +320,7 @@ namespace DiIiS_NA
 
         private static bool _shuttingDown = false;
         public static void Shutdown(Exception exception = null)
-        
+
         {
             Logger.Trace("Shutdown here");
             Logger.Trace("Stack trace at shutdown: " + Environment.StackTrace); // Log the stack trace
@@ -327,7 +328,7 @@ namespace DiIiS_NA
             _shuttingDown = true;
             if (!IsCancellationRequested())
                 Cancel();
-         
+
             AnsiTarget.StopIfRunning(IsTargetEnabled("ansi"));
             if (exception != null)
             {
@@ -388,7 +389,7 @@ namespace DiIiS_NA
         private static void InitLoggers()
         {
             LogManager.Enabled = true;
-            
+
             if (TargetsEnabled("ansi") > 1 || (IsTargetEnabled("console") && IsTargetEnabled("ansi")))
             {
                 AnsiConsole.MarkupLine("[underline red on white]Fatal:[/] [red]It is impossible to have both ANSI and Console targets activated concurrently.[/]");
@@ -455,7 +456,7 @@ namespace DiIiS_NA
                 return false;
             }
         }
-        
+
         [DllImport("kernel32.dll", ExactSpelling = true)]
         static extern IntPtr GetConsoleWindow();
 
@@ -475,7 +476,7 @@ namespace DiIiS_NA
                     ShowWindow(GetConsoleWindow(), MAXIMIZE);
                 }
             }
-            catch{ /*ignore*/ }
+            catch { /*ignore*/ }
         }
     }
 }

@@ -4,7 +4,7 @@ using static DiIiS_NA.LoginServer.Toons.Toon;
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBToon : Entity
+	public class DBToon
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual string Name { get; set; }
@@ -18,7 +18,7 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 		public virtual long Experience { get; set; }
 		public virtual ushort[] ParagonBonuses { get; set; }
 		public virtual int PvERating { get; set; }
-		public virtual int ChestsOpened { get; set; }                   
+		public virtual int ChestsOpened { get; set; }
 		public virtual int EventsCompleted { get; set; }
 		public virtual int Kills { get; set; }
 		public virtual int Deaths { get; set; }

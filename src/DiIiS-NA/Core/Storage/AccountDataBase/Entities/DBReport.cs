@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBReport : Entity
+	public class DBReport
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual string Type { get; set; }

@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBBonusSets : Entity
+	public class DBBonusSets
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual int SetId { get; set; }

@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBAchievements : Entity
+	public class DBAchievements
 	{
 		public new virtual ulong Id { get; set; }
 		public virtual DBGameAccount DBGameAccount { get; set; }

@@ -16,6 +16,7 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase
 		private static ISessionFactory _sessionFactory;
 		private static Configuration _config;
 		private static readonly object Lockobj = new object();
+
 		public static ISessionFactory SessionFactory
 		{
 			get
@@ -27,7 +28,6 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase
 			}
 		}
 
-
 		public static Configuration Config
 		{
 			get
@@ -36,24 +36,29 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase
 				{
 					_config = new Configuration();
 #if DEBUG
-                    _config = _config.Configure(File.Exists(Path.Combine(FileHelpers.AssemblyRoot, "database.Account.Debug.config")) ? Path.Combine(FileHelpers.AssemblyRoot, "database.Account.Debug.config") : Path.Combine(FileHelpers.AssemblyRoot, "database.Account.config"));
+					_config = _config.Configure(File.Exists(Path.Combine(FileHelpers.AssemblyRoot, "database.Account.Debug.config"))
+						? Path.Combine(FileHelpers.AssemblyRoot, "database.Account.Debug.config")
+						: Path.Combine(FileHelpers.AssemblyRoot, "database.Account.config"));
 #else
                     _config = _config.Configure(Path.Combine(FileHelpers.AssemblyRoot, "database.Account.config"));
 #endif
 
-                    var replacedProperties = new Dictionary<string, string>();
+					var replacedProperties = new Dictionary<string, string>();
 					foreach (var prop in _config.Properties)
 					{
-						var newvalue = prop.Value;
-						newvalue = newvalue.Replace("{$ASSETBASE}", DBManager.AssetDirectory);
+						var newvalue = prop.Value.Replace("{$ASSETBASE}", DBManager.AssetDirectory);
 						replacedProperties.Add(prop.Key, newvalue);
 					}
-					var dic = new Dictionary<string, string>();
-					dic.Add("dialect", "DiIiS_NA.Core.Storage.PostgresDialect");
-					//var Dial = NHibernate.Dialect.Dialect.GetDialect(dic);
-					
+
 					_config = _config.SetProperties(replacedProperties);
+
+					// ⚡ FIX: Desabilita validação de proxies (corrige erro do MemberwiseClone)
+					_config.SetProperty(NHibernate.Cfg.Environment.UseProxyValidator, "false");
+
+					// adiciona os mapeamentos das entidades
 					_config = _config.AddMappingsFromAssembly(Assembly.GetAssembly(typeof(DRLG_ContainerMapper)));
+
+					// ajuste para sqlite
 					if (_config.Properties.ContainsKey("dialect"))
 						if (_config.GetProperty("dialect").ToLower().Contains("sqlite"))
 							_config = _config.SetProperty("connection.release_mode", "on_close");
@@ -65,11 +70,7 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase
 
 		private static ISessionFactory CreateSessionFactory()
 		{
-			return Fluently.Configure(Config).ExposeConfiguration(
-				cfg =>
-					new SchemaUpdate(cfg).Execute(true, true)
-				).
-				BuildSessionFactory();
+			return Config.BuildSessionFactory();
 		}
 
 		public static void RebuildSchema()

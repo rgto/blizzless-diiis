@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBGlobalParams : Entity
+	public class DBGlobalParams
 	{
 		public new virtual ulong Id { get; set; }
 		public virtual string Name { get; set; }

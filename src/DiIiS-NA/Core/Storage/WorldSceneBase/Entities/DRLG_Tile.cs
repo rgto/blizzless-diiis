@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.WorldSceneBase.Entities
 {
-    public class DRLG_Tile : Entity
+    public class DRLG_Tile
     {
         public new virtual ulong Id { get; protected set; }
         public virtual int Head_Container { get; set; }

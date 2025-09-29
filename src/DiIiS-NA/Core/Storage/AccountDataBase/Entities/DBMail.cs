@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBMail : Entity
+	public class DBMail
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual DBToon DBToon { get; set; }

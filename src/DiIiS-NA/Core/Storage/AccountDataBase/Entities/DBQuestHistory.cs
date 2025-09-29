@@ -2,7 +2,7 @@
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBQuestHistory : Entity
+	public class DBQuestHistory
 	{
 		public new virtual ulong Id { get; set; }
 		public virtual DBToon DBToon { get; set; }

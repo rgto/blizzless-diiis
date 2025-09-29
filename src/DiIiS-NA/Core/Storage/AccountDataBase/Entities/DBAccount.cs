@@ -4,7 +4,7 @@ using FluentNHibernate.Data;
 
 namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 {
-	public class DBAccount : Entity
+	public class DBAccount
 	{
 		public new virtual ulong Id { get; protected set; }
 		public virtual string Email { get; set; }
@@ -21,7 +21,7 @@ namespace DiIiS_NA.Core.Storage.AccountDataBase.Entities
 		public virtual ulong LastOnline { get; set; }
 		public virtual bool HasRename { get; set; }
 		public virtual ulong RenameCooldown { get; set; }
-        public virtual ulong DiscordId { get;  set; }
-        public virtual string DiscordTag { get; set; }
-    }
+		public virtual ulong DiscordId { get; set; }
+		public virtual string DiscordTag { get; set; }
+	}
 }
