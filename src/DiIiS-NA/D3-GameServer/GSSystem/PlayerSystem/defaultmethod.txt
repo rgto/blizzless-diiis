@@ -1,0 +1,278 @@
+#region The Greater Rift Portal
+
+            default:
+                InGameClient.Game.NephalemGreaterLevel = message.Field0;
+
+                Logger.Info("Calling Nephalem Portal (Level: {0})", message.Field0);
+                activated = false;
+                foreach (var oldp in World.GetActorsBySNO(ActorSno._x1_openworld_lootrunportal, ActorSno._x1_openworld_tiered_rifts_portal))
+                {
+                    oldp.Destroy();
+                }
+
+                InGameClient.Game.ActiveNephalemPortal = true;
+                InGameClient.Game.NephalemGreater = true;
+                // Disable banner while greater is active, enable once boss is killed or portal is closed /advocaite
+                Attributes[GameAttributes.Banner_Usable] = false;
+                map = maps.PickRandom();
+                newTagMap.Add(new TagKeySNO(526850), new TagMapEntry(526850, (int)map, 0)); // World
+                newTagMap.Add(new TagKeySNO(526853), new TagMapEntry(526853, 288482, 0)); // Zone
+                newTagMap.Add(new TagKeySNO(526851), new TagMapEntry(526851, 172, 0)); // Entry-Point
+                InGameClient.Game.WorldOfPortalNephalem = map;
+
+                nephalemPWorld = InGameClient.Game.GetWorld(map);
+                foreach (var actor in nephalemPWorld.Actors.Values)
+                {
+                    if (actor is Portal portal1)
+                    {
+                        if (!portal1.CurrentScene.SceneSNO.Name.ToLower().Contains("entrance"))
+                        {
+                            portal1.Destroy();
+                        }
+                        else
+                        {
+                            portal1.Destination.DestLevelAreaSNO = 332339;
+                            portal1.Destination.WorldSNO = (int)WorldSno.x1_tristram_adventure_mode_hub;
+                            portal1.Destination.StartingPointActorTag = 24;
+                        }
+                    }
+                    else if (actor is Waypoint)
+                    {
+                        actor.Destroy();
+                    }
+                }
+
+                // Activation
+                lootRunObelisk = World.GetActorBySNO(ActorSno._x1_openworld_lootrunobelisk_b);
+                lootRunObelisk.PlayAnimation(5, (AnimationSno)lootRunObelisk.AnimationSet.TagMapAnimDefault[AnimationSetKeys.Opening]);
+                lootRunObelisk.Attributes[GameAttributes.Team_Override] = activated ? -1 : 2;
+                lootRunObelisk.Attributes[GameAttributes.Untargetable] = !activated;
+                lootRunObelisk.Attributes[GameAttributes.NPC_Is_Operatable] = activated;
+                lootRunObelisk.Attributes[GameAttributes.Operatable] = activated;
+                lootRunObelisk.Attributes[GameAttributes.Operatable_Story_Gizmo] = activated;
+                lootRunObelisk.Attributes[GameAttributes.Disabled] = !activated;
+                lootRunObelisk.Attributes[GameAttributes.Immunity] = !activated;
+                lootRunObelisk.Attributes.BroadcastChangedIfRevealed();
+
+                lootRunObelisk.CollFlags = 0;
+                World.BroadcastIfRevealed(plr => new ACDCollFlagsMessage
+                {
+                    ActorID = lootRunObelisk.DynamicID(plr),
+                    CollFlags = 0
+                }, lootRunObelisk);
+                portal = new Portal(World, ActorSno._x1_openworld_tiered_rifts_portal, newTagMap);
+
+                TickTimer altTimeout = new SecondsTickTimer(World.Game, 3.5f);
+                var altBoom = System.Threading.Tasks.Task.Factory.StartNew(() => WaitToSpawn(altTimeout));
+                altBoom.ContinueWith(delegate
+                {
+                    portal.EnterWorld(lootRunObelisk.Position);
+                    // Quest - 382695 - Greater Nephalem
+                    // Quest - 337492 - Regular Nephalem
+                    // Add a slight delay for the animation to complete before teleporting.
+                    TickTimer teleportDelay = new SecondsTickTimer(World.Game, 1.0f); // Additional 1-second delay
+                    var teleportTask = System.Threading.Tasks.Task.Factory.StartNew(() => WaitToSpawn(teleportDelay));
+                    teleportTask.ContinueWith(delegate
+                    {
+                        // Move players into the Greater Rift at the starting point
+                        var startingPoint = nephalemPWorld.GetStartingPointById(172); // Use the Entry-Point tag 172
+                        foreach (var plr in InGameClient.Game.Players.Values)
+                        {
+                            plr.ChangeWorld(nephalemPWorld, startingPoint.Position);;
+                        }
+                    });
+                    foreach (var plr in InGameClient.Game.Players.Values)
+                    {
+                        plr.InGameClient.SendMessage(new SimpleMessage(Opcodes.RiftStartedMessage));
+                        plr.InGameClient.SendMessage(new QuestUpdateMessage
+                        {
+                            snoQuest = 337492,
+                            snoLevelArea = 0x000466E2,
+                            StepID = -1,
+                            DisplayButton = true,
+                            Failed = false
+                        });
+                        plr.InGameClient.SendMessage(new QuestCounterMessage
+                        {
+                            snoQuest = 337492,
+                            snoLevelArea = 0x000466E2,
+                            StepID = -1,
+                            Checked = 1,
+                            Counter = 1
+                        });
+                        plr.InGameClient.SendMessage(new QuestUpdateMessage
+                        {
+                            snoQuest = 337492,
+                            snoLevelArea = 0x000466E2,
+                            StepID = 13,
+                            DisplayButton = true,
+                            Failed = false
+                        });
+                        plr.InGameClient.SendMessage(new GameSyncedDataMessage
+                        {
+                            SyncedData = new GameSyncedData
+                            {
+                                GameSyncedFlags = 6,
+                                Act = 3000,
+                                InitialMonsterLevel = InGameClient.Game.InitialMonsterLevel,
+                                MonsterLevel = 0x64E4425E,
+                                RandomWeatherSeed = InGameClient.Game.WeatherSeed,
+                                OpenWorldMode = -1,
+                                OpenWorldModeAct = -1,
+                                OpenWorldModeParam = -1,
+                                OpenWorldTransitionTime = 0x00000064,
+                                OpenWorldDefaultAct = 100,
+                                OpenWorldBonusAct = -1,
+                                SNODungeonFinderLevelArea = 0x00000001,
+                                LootRunOpen = 44,
+                                OpenLootRunLevel = 0,
+                                LootRunBossDead = 0,
+                                HunterPlayerIdx = 0,
+                                LootRunBossActive = -1,
+                                TieredLootRunFailed = 0,
+                                LootRunChallengeCompleted = 0,
+                                SetDungeonActive = 0,
+                                Pregame = 0,
+                                PregameEnd = 0,
+                                RoundStart = 0,
+                                RoundEnd = 0,
+                                PVPGameOver = 0x0,
+                                field_v273 = 0x0,
+                                TeamWins = new[] { 0x0, 0x0 },
+                                TeamScore = new[] { 0x0, 0x0 },
+                                PVPGameResult = new[] { 0x0, 0x0 },
+                                PartyGuideHeroId = 0x0,
+                                TiredRiftPaticipatingHeroID = new long[] { 0x0, 0x0, 0x0, 0x0 }
+                            }
+                        });
+                        plr.InGameClient.SendMessage(new IntDataMessage(Opcodes.DungeonFinderSeedMessage)
+                        {
+                            Field0 = 0x3E0FC64C
+                        });
+                        plr.InGameClient.SendMessage(new IntDataMessage(Opcodes.DungeonFinderParticipatingPlayerCount)
+                        {
+                            Field0 = 1
+                        });
+                        // BarProgress ProgressBar of Greater Rift, Keep 0 to reset every time.
+                        plr.InGameClient.SendMessage(new FloatDataMessage(Opcodes.DungeonFinderProgressMessage)
+                        {
+                            Field0 = 0
+                        });
+                        plr.InGameClient.SendMessage(new SNODataMessage(Opcodes.DungeonFinderSetTimedEvent)
+                        {
+                            Field0 = 0
+                        });
+                        plr.Attributes[GameAttributes.Tiered_Loot_Run_Death_Count] = 0;
+                    }
+
+                    // Start a 15-second timer to close the Greater Rift.
+                    // By default the correct value is 15min.
+                    // Greater Rift Close System.
+                    TickTimer closeRiftTimer = new SecondsTickTimer(World.Game, 15f);
+                    var closeRiftTask = System.Threading.Tasks.Task.Factory.StartNew(() => WaitToSpawn(closeRiftTimer));
+                    closeRiftTask.ContinueWith(delegate
+                    {
+                        // Remove all monsters in the Greater Rift world.
+                        foreach (var actor in nephalemPWorld.Actors.Values)
+                        {
+                            if (actor is Monster)
+                            {
+                                actor.Destroy();
+                            }
+                        }
+
+                        // Destroy the Greater Rift portal.
+                        if (portal != null)
+                        {
+                            portal.Destroy();
+                        }
+
+                        // Reset game state.
+                        InGameClient.Game.ActiveNephalemPortal = false;
+                        InGameClient.Game.NephalemGreater = false;
+                        InGameClient.Game.WorldOfPortalNephalem = WorldSno.__NONE;
+                        Attributes[GameAttributes.Banner_Usable] = true;
+
+                        // Move players to Tristram hub starting point.
+                        var hubWorld = InGameClient.Game.GetWorld(WorldSno.x1_tristram_adventure_mode_hub);
+                        var startingPoint = hubWorld.GetStartingPointById(24);
+                        foreach (var plr in InGameClient.Game.Players.Values)
+                        {
+                            if (plr.World == nephalemPWorld)
+                            {
+                                plr.ChangeWorld(hubWorld, startingPoint.Position);
+                            }
+                            // Remove the Quest info "Kill The Guardians Minions."
+                            plr.InGameClient.SendMessage(new QuestUpdateMessage
+                            {
+                                snoQuest = 337492,
+                                snoLevelArea = 0x000466E2,
+                                StepID = -1,
+                                DisplayButton = false,
+                                Failed = false
+                            });
+                            // Reset the client, include the quest msg above and the ProgressBar.
+                            plr.InGameClient.SendMessage(new GameSyncedDataMessage
+                            {
+                                SyncedData = new GameSyncedData
+                                {
+                                    GameSyncedFlags = 6,
+                                    Act = 3000, // act id
+                                    InitialMonsterLevel = InGameClient.Game.InitialMonsterLevel, // InitialMonsterLevel
+                                    MonsterLevel = 0x64E4425E, // MonsterLevel
+                                    RandomWeatherSeed = InGameClient.Game.WeatherSeed, // RandomWeatherSeed
+                                    OpenWorldMode = -1, // OpenWorldMode
+                                    OpenWorldModeAct = -1, // OpenWorldModeAct
+                                    OpenWorldModeParam = -1, // OpenWorldModeParam
+                                    OpenWorldTransitionTime = 0x00000064, // OpenWorldTransitionTime
+                                    OpenWorldDefaultAct = 100, // OpenWorldDefaultAct
+                                    OpenWorldBonusAct = -1, // OpenWorldBonusAct
+                                    SNODungeonFinderLevelArea = 0x00000001, // SNODungeonFinderLevelArea
+                                    LootRunOpen = -1, // LootRunOpen // 0 - Great Portal
+                                    OpenLootRunLevel = 0, // OpenLootRunLevel
+                                    LootRunBossDead = 0, // LootRunBossDead
+                                    HunterPlayerIdx = 0, // HunterPlayerIdx
+                                    LootRunBossActive = -1, // LootRunBossActive
+                                    TieredLootRunFailed = 0, // TieredLootRunFailed
+                                    LootRunChallengeCompleted = 0, // LootRunChallengeCompleted
+                                    SetDungeonActive = 0, // SetDungeonActive
+                                    Pregame = 0, // Pregame
+                                    PregameEnd = 0, // PregameEnd
+                                    RoundStart = 0, // RoundStart
+                                    RoundEnd = 0, // RoundEnd
+                                    PVPGameOver = 0x0, // PVPGameOver
+                                    field_v273 = 0x0,
+                                    TeamWins = new[] { 0x0, 0x0 }, // TeamWins
+                                    TeamScore = new[] { 0x0, 0x0 }, // TeamScore
+                                    PVPGameResult = new[] { 0x0, 0x0 }, // PVPGameResult
+                                    PartyGuideHeroId = 0x0, // PartyGuideHeroId // new EntityId() { High = 0, Low = (long)this.Players.Values.First().Toon.PersistentID }
+                                    TiredRiftPaticipatingHeroID = new long[] { 0x0, 0x0, 0x0, 0x0 } // TiredRiftPaticipatingHeroID
+                                }
+                            });
+                        }
+
+                        // Reset obelisk state to allow new rift.
+                        activated = true;
+                        lootRunObelisk.PlayAnimation(5, (AnimationSno)lootRunObelisk.AnimationSet.TagMapAnimDefault[AnimationSetKeys.Closing]);
+                        lootRunObelisk.Attributes[GameAttributes.Team_Override] = activated ? -1 : 2;
+                        lootRunObelisk.Attributes[GameAttributes.Untargetable] = !activated;
+                        lootRunObelisk.Attributes[GameAttributes.NPC_Is_Operatable] = activated;
+                        lootRunObelisk.Attributes[GameAttributes.Operatable] = activated;
+                        lootRunObelisk.Attributes[GameAttributes.Operatable_Story_Gizmo] = activated;
+                        lootRunObelisk.Attributes[GameAttributes.Disabled] = !activated;
+                        lootRunObelisk.Attributes[GameAttributes.Immunity] = !activated;
+                        lootRunObelisk.Attributes.BroadcastChangedIfRevealed();
+
+                        lootRunObelisk.CollFlags = 0;
+                        World.BroadcastIfRevealed(plr => new ACDCollFlagsMessage
+                        {
+                            ActorID = lootRunObelisk.DynamicID(plr),
+                            CollFlags = 0
+                        }, lootRunObelisk);
+
+                        Logger.Info("Greater Rift closed after 15 seconds, obelisk reset for new rift.");
+                    });
+                });
+                break;
+
+            #endregion

@@ -460,7 +460,7 @@ namespace DiIiS_NA.GameServer.GSSystem.PlayerSystem
 						}
 					}
 
-					//Таймер до закрытия
+					//Countdown timer
 					/*
 					plr.InGameClient.SendMessage(new DungeonFinderClosingMessage()
 					{
@@ -468,7 +468,7 @@ namespace DiIiS_NA.GameServer.GSSystem.PlayerSystem
 						Field1 = -1
 					});
 					//*/
-					//Обнуляем прогресс
+					//Reset progress
 					plr.InGameClient.SendMessage(new FloatDataMessage(Opcodes.DungeonFinderProgressMessage)
 					{
 						Field0 = 0
