@@ -354,6 +354,11 @@ namespace DiIiS_NA.Core.Logging
 			return result;
 		}
 
-		#endregion
-	}
+        internal void Warn(string v, string name1, object name2)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
 }

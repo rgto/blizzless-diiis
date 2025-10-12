@@ -1,0 +1,1 @@
+ openssl pkcs12 -provider legacy -provider default -in bnetserver.p12 -info -nodes

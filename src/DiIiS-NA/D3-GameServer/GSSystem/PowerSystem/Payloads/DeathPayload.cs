@@ -217,17 +217,17 @@ namespace DiIiS_NA.GameServer.GSSystem.PowerSystem.Payloads
 			{
 				//Boss-A1 Q2
 				case ActorSno._skeleton_a_cain_unique:
-				//Йондар
+				//Yondar
 				case ActorSno._adventurer_d_templarintrounique:
-				//Темные жрецы
+				//Dark priests
 				case ActorSno._triunevessel_event31:
-				//Падшие
+				//The Fallen
 				case ActorSno._fallengrunt_a:
 					Target.PlayAnimation(11, AnimationSno.triunesummoner_death_02_persistentblood, 1f);
 					break;
-				//Разнощик чумы
+				//Plague spreader
 				case ActorSno._fleshpitflyer_b:
-				//Пчелы
+				//Bees
 				case ActorSno._sandwasp_a:
 				case ActorSno._fleshpitflyer_leoric_inferno:
 					Target.PlayAnimation(11, AnimationSno.fleshpitflyer_death, 1f);
@@ -632,7 +632,7 @@ namespace DiIiS_NA.GameServer.GSSystem.PowerSystem.Payloads
 				bounty.CheckKill((int)Target.SNO, Target.OriginalLevelArea, Target.World.SNO);
 			}
 
-			//Nephalem Rift
+			//Nephalem Rift or normal GR or NR?
 			if ((Target.CurrentScene.Specification.SNOLevelAreas[0] is 332339 or 288482) &&
 			    Target.World.Game.ActiveNephalemTimer && Target.World.Game.ActiveNephalemKilledMobs == false)
 			{
@@ -728,7 +728,7 @@ namespace DiIiS_NA.GameServer.GSSystem.PowerSystem.Payloads
 				}
 			}
 
-			//Nephalem Rift Boss Killed
+			// Nephalem Rift Boss Killed GR or NR?
 			if (Target.Attributes[GameAttributes.Is_Loot_Run_Boss])
 			{
 				Target.World.Game.ActiveNephalemKilledBoss = true;

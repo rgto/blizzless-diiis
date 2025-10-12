@@ -89,7 +89,7 @@ namespace DiIiS_NA.REST
         {
             SendResponseHtml(HttpCode.OK, "Welcome to BlizzLess.Net" + 
                                           "\nBuild " + Program.BUILD +
-                                          "\nSupport: 2.7.4");
+                                          "\nSupport: 2.8.0.99920");
         }
 
         void SendResponse<T>(HttpCode code, T response)

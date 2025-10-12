@@ -1,0 +1,170 @@
+using bgs.protocol.channel.v1;
+using DiIiS_NA.Core.Logging;
+using DiIiS_NA.D3_GameServer.Core.Types.SNO;
+using DiIiS_NA.GameServer.Core.Types.TagMap;
+using DiIiS_NA.GameServer.GSSystem.ActorSystem;
+using DiIiS_NA.GameServer.GSSystem.MapSystem;
+using DiIiS_NA.GameServer.GSSystem.TickerSystem;
+using DiIiS_NA.GameServer.MessageSystem;
+using DiIiS_NA.GameServer.MessageSystem.Message.Definitions.ACD;
+using DiIiS_NA.GameServer.MessageSystem.Message.Definitions.Game;
+using DiIiS_NA.GameServer.MessageSystem.Message.Definitions.Quest;
+using DiIiS_NA.GameServer.MessageSystem.Message.Fields;
+using DiIiS_NA.LoginServer.Battle;
+using System;
+using System.Threading.Tasks;
+
+namespace DiIiS_NA.GameServer.GSSystem.PlayerSystem
+{
+    public static class GreaterRiftManager
+    {
+        private static readonly Logger logger = LogManager.CreateLogger(nameof(GreaterRiftManager));
+
+        public static void StartGreaterRiftCloseTimer(World world, Portal portal, Actor lootRunObelisk, World nephalemPWorld, float durationInSeconds = 15f)
+        {
+            if (world == null || portal == null || lootRunObelisk == null || nephalemPWorld == null)
+            {
+                logger.Warn("One or more required instances are null in StartGreaterRiftCloseTimer.");
+                return;
+            }
+
+            logger.Info($"Starting Greater Rift close timer for {durationInSeconds} seconds.");
+
+            Task.Delay(TimeSpan.FromSeconds(durationInSeconds)).ContinueWith(task =>
+            {
+                logger.Info("Greater Rift close timer triggered.");
+
+                // Destroy monsters
+                if (nephalemPWorld != null)
+                {
+                    foreach (var actor in nephalemPWorld.Actors.Values)
+                    {
+                        if (actor is Monster)
+                        {
+                            actor.Destroy();
+                            logger.Info($"Destroyed monster: {actor.SNO}");
+                        }
+                    }
+                }
+                else
+                {
+                    logger.Warn("nephalemPWorld is null, skipping monster destruction.");
+                }
+
+                // Destroy portal
+                if (portal != null)
+                {
+                    portal.Destroy();
+                    logger.Info("Destroyed Greater Rift portal.");
+                }
+                else
+                {
+                    logger.Warn("Portal is null, skipping destruction.");
+                }
+
+                // Reset game state
+                world.Game.ActiveNephalemPortal = false;
+                world.Game.NephalemGreater = false;
+                world.Game.WorldOfPortalNephalem = WorldSno.__NONE;
+
+                // Move players to hub
+                var hubWorld = world.Game.GetWorld(WorldSno.x1_tristram_adventure_mode_hub);
+                if (hubWorld != null)
+                {
+                    var startingPoint = hubWorld.GetStartingPointById(24);
+                    foreach (var plr in world.Game.Players.Values)
+                    {
+                        if (plr.World == nephalemPWorld)
+                        {
+                            plr.ChangeWorld(hubWorld, startingPoint.Position);
+                            PlayerManager.SendWhisper("Cochichando no seu ouvidinho.");
+                            logger.Info($"Teleported player {plr.Toon.Name} to hub.");
+                        }
+                    }
+                }
+                else
+                {
+                    logger.Warn("Hub world (x1_tristram_adventure_mode_hub) not found.");
+                }
+
+                foreach (var plr in world.Game.Players.Values)
+                {
+                    plr.InGameClient.SendMessage(new QuestUpdateMessage
+                    {
+                        snoQuest = 337492,
+                        snoLevelArea = 0x000466E2,
+                        StepID = -1,
+                        DisplayButton = false,
+                        Failed = false
+                    });
+
+                    plr.InGameClient.SendMessage(new GameSyncedDataMessage
+                    {
+                        SyncedData = new GameSyncedData
+                        {
+                            GameSyncedFlags = 6,
+                            Act = 3000,
+                            InitialMonsterLevel = world.Game.InitialMonsterLevel,
+                            MonsterLevel = 0x64E4425E,
+                            RandomWeatherSeed = world.Game.WeatherSeed,
+                            OpenWorldMode = -1,
+                            OpenWorldModeAct = -1,
+                            OpenWorldModeParam = -1,
+                            OpenWorldTransitionTime = 0x00000064,
+                            OpenWorldDefaultAct = 100,
+                            OpenWorldBonusAct = -1,
+                            SNODungeonFinderLevelArea = 0x00000001,
+                            LootRunOpen = -1,
+                            OpenLootRunLevel = 0,
+                            LootRunBossDead = 0,
+                            HunterPlayerIdx = 0,
+                            LootRunBossActive = -1,
+                            TieredLootRunFailed = 0,
+                            LootRunChallengeCompleted = 0,
+                            SetDungeonActive = 0,
+                            Pregame = 0,
+                            PregameEnd = 0,
+                            RoundStart = 0,
+                            RoundEnd = 0,
+                            PVPGameOver = 0x0,
+                            field_v273 = 0x0,
+                            TeamWins = new[] { 0x0, 0x0 },
+                            TeamScore = new[] { 0x0, 0x0 },
+                            PVPGameResult = new[] { 0x0, 0x0 },
+                            PartyGuideHeroId = 0x0,
+                            TiredRiftPaticipatingHeroID = new long[] { 0x0, 0x0, 0x0, 0x0 }
+                        }
+                    });
+                }
+
+                // Reset obelisk state
+                if (lootRunObelisk != null)
+                {
+                    lootRunObelisk.PlayAnimation(5, (AnimationSno)lootRunObelisk.AnimationSet.TagMapAnimDefault[AnimationSetKeys.Closing]);
+                    lootRunObelisk.Attributes[GameAttributes.Team_Override] = true ? -1 : 2;
+                    lootRunObelisk.Attributes[GameAttributes.Untargetable] = false;
+                    lootRunObelisk.Attributes[GameAttributes.NPC_Is_Operatable] = true;
+                    lootRunObelisk.Attributes[GameAttributes.Operatable] = true;
+                    lootRunObelisk.Attributes[GameAttributes.Operatable_Story_Gizmo] = true;
+                    lootRunObelisk.Attributes[GameAttributes.Disabled] = false;
+                    lootRunObelisk.Attributes[GameAttributes.Immunity] = false;
+                    lootRunObelisk.Attributes.BroadcastChangedIfRevealed();
+
+                    lootRunObelisk.CollFlags = 0;
+                    world.BroadcastIfRevealed(plr => new ACDCollFlagsMessage
+                    {
+                        ActorID = lootRunObelisk.DynamicID(plr),
+                        CollFlags = 0
+                    }, lootRunObelisk);
+                    logger.Info("Obelisk state reset.");
+                }
+                else
+                {
+                    logger.Warn("lootRunObelisk is null, skipping reset.");
+                }
+
+                logger.Info($"Greater Rift closed after {durationInSeconds} seconds, obelisk reset for new rift.");
+            });
+        }
+    }
+}

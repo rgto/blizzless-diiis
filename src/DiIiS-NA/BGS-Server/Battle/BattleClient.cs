@@ -166,8 +166,8 @@ namespace DiIiS_NA.LoginServer.Battle
 			else
 			{
 				var service = Service.GetByID(Service.GetByHash(header.ServiceHash));
-				if (header.ServiceHash != 2119327385)
-					if (service != null)
+				if (header.ServiceHash != 1572557250) //1572557250 new one //2119327385 old one  
+                    if (service != null)
 					{
 						#region All service hashes
 
@@ -272,12 +272,41 @@ namespace DiIiS_NA.LoginServer.Battle
 							Logger.Warn("Unimplemented service method:$[red]$ {0}.{1} $[/]$", service.GetType().Name, method.Name);
 						}
 					}
+					//else
+					//{
+					//	Logger.Warn(
+					//		$"Client is calling unconnected service (id: {header.ServiceId}, hash: {header.ServiceHash}  Method id: {header.MethodId})");
+					//}
+
 					else
 					{
 						Logger.Warn(
 							$"Client is calling unconnected service (id: {header.ServiceId}, hash: {header.ServiceHash}  Method id: {header.MethodId})");
-					}
-			}
+
+                        // Enviar resposta vazia para evitar timeout do cliente
+                        try
+                        {
+                            HandlerController controller = new()
+                            {
+                                Client = this,
+                                LastCallHeader = header,
+                                Status = 0, // Status 0 = OK (ou use outro código se preferir indicar erro)
+                                ListenerId = 0
+                            };
+
+                            // Envia uma resposta vazia
+                            SendResponse(ctx, (int)header.Token, null, controller.Status);
+                            Logger.Debug($"Sent empty response for unknown service hash: {header.ServiceHash}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error($"Error sending response for unknown service: {ex.Message}");
+                        }
+                    }
+
+
+
+            }
 		}
 
 		/// <summary>
