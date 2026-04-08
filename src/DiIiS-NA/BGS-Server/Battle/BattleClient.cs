@@ -546,6 +546,12 @@ namespace DiIiS_NA.LoginServer.Battle
 			base.ChannelInactive(context);
         }
 
+		public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+		{
+			Logger.Error("Pipeline exception from {0}: {1}", SocketConnection?.RemoteAddress, exception.Message);
+			base.ExceptionCaught(context, exception);
+		}
+
 		private void DisconnectClient()
 		{
 			if (Account != null && Account.GameAccount != null) Account.GameAccount.LoggedInClient = null;

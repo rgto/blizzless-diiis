@@ -58,7 +58,7 @@ namespace DiIiS_NA.REST.Manager
             input.Label = "Log In";
             _formInputs.Inputs.Add(input);
 
-            _certificate = new X509Certificate2("BNetServer.pfx");
+            _certificate = new X509Certificate2("bnetserver.p12", "123");
 
             return true;
         }

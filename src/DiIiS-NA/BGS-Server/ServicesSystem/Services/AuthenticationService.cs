@@ -51,7 +51,7 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
             //Error 52 - This account has been blocked due to numerous violations of the terms of use of the Battle.net service
             //Error 53: Action of this account has been suspended due to violations of the terms of use of the Batle.net service
 
-            int VersionRetail = 81850; //74291 - 2.7.0, 76761 - 2.7.1, 79575 - 2.7.2;
+            int VersionRetail = 99920; //81850 - 2.7.4, 74291 - 2.7.0, 76761 - 2.7.1, 79575 - 2.7.2;
             int VersionPTR = 79151;
             string version = "";
             int a = request.ApplicationVersion;
@@ -118,10 +118,10 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
                         builder.SetPayloadType("web_auth_url");
                         if (REST.RestConfig.Instance.Public)
                             builder.SetPayload(ByteString.CopyFromUtf8(
-                                $"http://{REST.RestConfig.Instance.PublicIP}:{REST.RestConfig.Instance.Port}/battlenet/login"));
+                                $"https://{REST.RestConfig.Instance.PublicIP}:{REST.RestConfig.Instance.Port}/battlenet/login"));
                         else
                             builder.SetPayload(ByteString.CopyFromUtf8(
-                                $"http://{Program.RestServerIp}:{REST.RestConfig.Instance.Port}/battlenet/login"));
+                                $"https://{Program.RestServerIp}:{REST.RestConfig.Instance.Port}/battlenet/login"));
 
                         ((HandlerController)controller).Client.MakeRpc((lid) => ChallengeListener.CreateStub(((HandlerController)controller).Client).OnExternalChallenge(controller, builder.Build(), callback => { }));
                         #endregion

@@ -29,11 +29,13 @@ namespace DiIiS_NA.LoginServer.Base
             var Certificate = new X509Certificate2("bnetserver.p12", "123");
             TlsHandler TLS = TlsHandler.Server(Certificate);
 
+            p.AddLast(new PreTlsLogger());
             p.AddLast(TLS);
+            p.AddLast(new RawDataLogger());
             p.AddLast(new HttpServerCodec());
             p.AddLast(new HttpObjectAggregator(8192));
             //p.AddLast(new WebSocketServerProtocolHandler("/", "jsonrpc.aurora.v1.30.battle.net", true));
-            p.AddLast(new HandshakeHandler("/", "v1.rpc.battle.net", true));
+            p.AddLast(new HandshakeHandler("/", "v1.rpc.battle.net", true, 65536, false, true));
 
             p.AddLast(new BNetCodec());
             p.AddLast(new BattleClient(socketChannel, TLS));
@@ -282,8 +284,10 @@ namespace DiIiS_NA.LoginServer.Base
         public override void ChannelRead(IChannelHandlerContext ctx, object msg)
         {
             IFullHttpRequest req = (IFullHttpRequest)msg;
+            _logger.Info("WebSocket upgrade request: Method={0}, URI={1}, Protocol={2}", req.Method, req.Uri, req.Headers.TryGet(DotNetty.Codecs.Http.HttpHeaderNames.SecWebsocketProtocol, out var proto) ? proto.ToString() : "(none)");
             if (IsNotWebSocketPath(req))
             {
+                _logger.Warn("WebSocket path rejected: URI={0}, expected={1}", req.Uri, websocketPath);
                 ctx.FireChannelRead(msg);
                 return;
             }
@@ -361,6 +365,98 @@ namespace DiIiS_NA.LoginServer.Base
             string host = "192.168.1.100"; // Replace with your desired default host, e.g., the server's IP or DNS.
 
             return $"{protocol}://{host}{path}";
+        }
+    }
+
+    public class RawDataLogger : ChannelHandlerAdapter
+    {
+        public override void HandlerAdded(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PostTLS] handler added");
+            base.HandlerAdded(context);
+        }
+
+        public override void ChannelActive(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PostTLS] channel ACTIVE");
+            base.ChannelActive(context);
+        }
+
+        public override void ChannelInactive(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PostTLS] channel INACTIVE");
+            base.ChannelInactive(context);
+        }
+
+        public override void UserEventTriggered(IChannelHandlerContext context, object evt)
+        {
+            Console.Error.WriteLine($"[DIAG-PostTLS] UserEvent: {evt.GetType().Name} = {evt}");
+            base.UserEventTriggered(context, evt);
+        }
+
+        public override void ChannelRead(IChannelHandlerContext context, object message)
+        {
+            if (message is IByteBuffer buf)
+            {
+                int readable = buf.ReadableBytes;
+                int toDump = Math.Min(readable, 256);
+                byte[] bytes = new byte[toDump];
+                buf.GetBytes(buf.ReaderIndex, bytes, 0, toDump);
+                var hex = BitConverter.ToString(bytes).Replace("-", " ");
+                Console.Error.WriteLine($"[DIAG-PostTLS] DATA ({readable} bytes): {hex}");
+            }
+            else
+            {
+                Console.Error.WriteLine($"[DIAG-PostTLS] DATA type={message.GetType().FullName}");
+            }
+            context.FireChannelRead(message);
+        }
+
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+        {
+            Console.Error.WriteLine($"[DIAG-PostTLS] EXCEPTION: {exception}");
+            context.FireExceptionCaught(exception);
+        }
+    }
+
+    public class PreTlsLogger : ChannelHandlerAdapter
+    {
+        public override void HandlerAdded(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PreTLS] handler added");
+            base.HandlerAdded(context);
+        }
+
+        public override void ChannelActive(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PreTLS] channel ACTIVE");
+            base.ChannelActive(context);
+        }
+
+        public override void ChannelInactive(IChannelHandlerContext context)
+        {
+            Console.Error.WriteLine("[DIAG-PreTLS] channel INACTIVE");
+            base.ChannelInactive(context);
+        }
+
+        public override void ChannelRead(IChannelHandlerContext context, object message)
+        {
+            if (message is IByteBuffer buf)
+            {
+                int readable = buf.ReadableBytes;
+                int toDump = Math.Min(readable, 512);
+                byte[] bytes = new byte[toDump];
+                buf.GetBytes(buf.ReaderIndex, bytes, 0, toDump);
+                var hex = BitConverter.ToString(bytes).Replace("-", " ");
+                Console.Error.WriteLine($"[DIAG-PreTLS] RAW TCP ({readable} bytes): {hex}");
+            }
+            context.FireChannelRead(message);
+        }
+
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+        {
+            Console.Error.WriteLine($"[DIAG-PreTLS] EXCEPTION: {exception}");
+            context.FireExceptionCaught(exception);
         }
     }
 }

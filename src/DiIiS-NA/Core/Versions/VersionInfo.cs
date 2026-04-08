@@ -14,7 +14,7 @@ namespace DiIiS_NA.Core.Versions
 			/// <summary>
 			/// Main assemblies version.
 			/// </summary>
-			public const string Version = "3.22044";
+			public const string Version = "3.99920";
 		}
 
 		/// <summary>
@@ -25,7 +25,7 @@ namespace DiIiS_NA.Core.Versions
 			/// <summary>
 			/// Required client version.
 			/// </summary>
-			public const int RequiredClientVersion = 22044;
+			public const int RequiredClientVersion = 99920;
 
 			public static Dictionary<string, int> ClientVersionMaps = new()
 			{
@@ -131,8 +131,8 @@ namespace DiIiS_NA.Core.Versions
 		{
 			public const int ProtocolHash = unchecked((int)0x280CA408); //22044
 
-			public const string MajorVersion = "2.6.9";
-			public const string ServerBuild = "22044";
+			public const string MajorVersion = "2.8.0";
+			public const string ServerBuild = "99920";
 			public const string VersionString = MajorVersion + "." + ServerBuild;
 		}
 	}

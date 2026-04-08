@@ -1,7 +1,11 @@
 ﻿using DiIiS_NA.Core.Logging;
 using System;
+using System.IO;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace DiIiS_NA.REST
 {
@@ -19,6 +23,15 @@ namespace DiIiS_NA.REST
         public virtual void Dispose()
         {
             _receiveBuffer = null;
+            _sslStream?.Dispose();
+            _networkStream?.Dispose();
+        }
+
+        public async Task InitializeTlsAsync(X509Certificate2 certificate)
+        {
+            _networkStream = new NetworkStream(_socket, false);
+            _sslStream = new SslStream(_networkStream, false);
+            await _sslStream.AuthenticateAsServerAsync(certificate);
         }
 
         public abstract void Start();
@@ -38,21 +51,34 @@ namespace DiIiS_NA.REST
             return _remotePort;
         }
 
-        public void AsyncRead()
+        public async void AsyncRead()
         {
             if (!IsOpen())
                 return;
 
             try
             {
-                using var socketEventArgs = new SocketAsyncEventArgs();
-                socketEventArgs.SetBuffer(_receiveBuffer, 0, _receiveBuffer.Length);
-                socketEventArgs.Completed += (sender, args) => ReadHandlerInternal(args);
-                socketEventArgs.SocketFlags = SocketFlags.None;
-                socketEventArgs.RemoteEndPoint = _socket.RemoteEndPoint;
+                if (_sslStream != null)
+                {
+                    int bytesRead = await _sslStream.ReadAsync(_receiveBuffer, 0, _receiveBuffer.Length);
+                    if (bytesRead == 0)
+                    {
+                        CloseSocket();
+                        return;
+                    }
+                    ReadHandler(bytesRead);
+                }
+                else
+                {
+                    using var socketEventArgs = new SocketAsyncEventArgs();
+                    socketEventArgs.SetBuffer(_receiveBuffer, 0, _receiveBuffer.Length);
+                    socketEventArgs.Completed += (sender, args) => ReadHandlerInternal(args);
+                    socketEventArgs.SocketFlags = SocketFlags.None;
+                    socketEventArgs.RemoteEndPoint = _socket.RemoteEndPoint;
 
-                if (!_socket.ReceiveAsync(socketEventArgs))
-                    ReadHandlerInternal(socketEventArgs);
+                    if (!_socket.ReceiveAsync(socketEventArgs))
+                        ReadHandlerInternal(socketEventArgs);
+                }
             }
             catch (Exception ex)
             {
@@ -110,18 +136,34 @@ namespace DiIiS_NA.REST
             _socket.Send(data);
         }
 
-        public void AsyncWrite(byte[] data)
+        public async void AsyncWrite(byte[] data)
         {
             if (!IsOpen())
                 return;
-                        using (var socketEventargs = new SocketAsyncEventArgs())
+
+            try
             {
-                socketEventargs.SetBuffer(data, 0, data.Length);
-                socketEventargs.Completed += WriteHandlerInternal;
-                socketEventargs.RemoteEndPoint = _socket.RemoteEndPoint;
-                socketEventargs.UserToken = _socket;
-                socketEventargs.SocketFlags = SocketFlags.None;
-                _socket.SendAsync(socketEventargs);
+                if (_sslStream != null)
+                {
+                    await _sslStream.WriteAsync(data, 0, data.Length);
+                    await _sslStream.FlushAsync();
+                }
+                else
+                {
+                    using (var socketEventargs = new SocketAsyncEventArgs())
+                    {
+                        socketEventargs.SetBuffer(data, 0, data.Length);
+                        socketEventargs.Completed += WriteHandlerInternal;
+                        socketEventargs.RemoteEndPoint = _socket.RemoteEndPoint;
+                        socketEventargs.UserToken = _socket;
+                        socketEventargs.SocketFlags = SocketFlags.None;
+                        _socket.SendAsync(socketEventargs);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.ErrorException(ex, "");
             }
         }
 
@@ -167,6 +209,8 @@ namespace DiIiS_NA.REST
 
         Socket _socket;
         byte[] _receiveBuffer;
+        NetworkStream _networkStream;
+        SslStream _sslStream;
 
         volatile bool _closed;
 

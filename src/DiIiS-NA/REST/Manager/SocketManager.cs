@@ -1,11 +1,19 @@
 ﻿using DiIiS_NA.REST.Networking;
 using System;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DiIiS_NA.REST.Manager
 {
     public class SocketManager<TSocketType> where TSocketType : ISocket
     {
+        private X509Certificate2 _certificate;
+
+        public void SetCertificate(X509Certificate2 certificate)
+        {
+            _certificate = certificate;
+        }
+
         public virtual bool StartNetwork(string bindIp, int port, int threadCount = 1)
         {
             Cypher.Assert(threadCount > 0);
@@ -52,11 +60,17 @@ namespace DiIiS_NA.REST.Manager
                     _threads[i].Wait();
         }
 
-        public virtual void OnSocketOpen(Socket sock)
+        public virtual async void OnSocketOpen(Socket sock)
         {
             try
             {
                 TSocketType newSocket = (TSocketType)Activator.CreateInstance(typeof(TSocketType), sock);
+
+                if (_certificate != null && newSocket is SocketBase socketBase)
+                {
+                    await socketBase.InitializeTlsAsync(_certificate);
+                }
+
                 newSocket.Start();
 
                 _threads[SelectThreadWithMinConnections()].AddSocket(newSocket);
