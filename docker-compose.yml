@@ -5,7 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: diiis-na-server
     volumes:
-     - ./src/DiIiS-NA/config.ini:/app/config.ini
+     - ./configs/config.docker.ini:/app/config.ini
+     - ./configs/database.Account.config:/app/database.Account.config
+     - ./configs/database.Worlds.config:/app/database.Worlds.config
     ports:
       - 83:83
       - 1119:1119
