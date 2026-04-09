@@ -145,8 +145,16 @@ namespace DiIiS_NA.LoginServer.Battle
 			Header header = msg.GetHeader();
 			byte[] payload = (byte[])msg.GetPayload();
 
-			if (msg.GetHeader().ServiceId == _responseServiceId)
+			Console.Error.WriteLine("[TRACE] RECV: serviceId={0}, serviceHash=0x{1:X8}, methodId={2}, token={3}, objectId={4}, size={5}, status={6}, isResponse={7}, payloadLen={8}",
+				header.ServiceId, header.HasServiceHash ? header.ServiceHash : 0, header.HasMethodId ? header.MethodId : 0,
+				header.HasToken ? header.Token : 0, header.HasObjectId ? header.ObjectId : 0,
+				header.HasSize ? header.Size : 0, header.HasStatus ? header.Status : 0,
+				header.HasIsResponse ? header.IsResponse.ToString() : "N/A", payload?.Length ?? -1);
+
+			if (msg.GetHeader().ServiceId == _responseServiceId || (header.HasIsResponse && header.IsResponse))
 			{
+				Console.Error.WriteLine("[TRACE] CLIENT RESPONSE: serviceId={0}, token={1}, isResponse={2}, payloadLen={3}",
+					header.ServiceId, header.Token, header.HasIsResponse ? header.IsResponse.ToString() : "N/A", payload?.Length ?? -1);
 				if (_pendingResponses.Count == 0) return;
 				RPCCallBack done = _pendingResponses[(int)header.Token];
 				if (done != null)
@@ -245,7 +253,23 @@ namespace DiIiS_NA.LoginServer.Battle
 							service.DescriptorForType.Methods.Single(m => GetMethodId(m) == header.MethodId);
 						IMessage proto = service.GetRequestPrototype(method);
 						IBuilder builder = proto.WeakCreateBuilderForType();
-						IMessage message = builder.WeakMergeFrom(ByteString.CopyFrom(payload)).WeakBuild();
+						IMessage message;
+						try
+						{
+							message = builder.WeakMergeFrom(ByteString.CopyFrom(payload)).WeakBuildPartial();
+						}
+						catch (Exception ex)
+						{
+							Logger.Warn("Failed to deserialize request for {0}.{1} (hash: {2}): {3}",
+								service.GetType().Name, method.Name, header.ServiceHash, ex.Message);
+							Console.Error.WriteLine("[TRACE] DESERIALIZE FAIL: service={0}, method={1}, methodId={2}, hash=0x{3:X8}, payloadLen={4}, payload={5}, exception={6}",
+								service.GetType().Name, method.Name, header.MethodId, header.ServiceHash,
+								payload?.Length ?? -1,
+								payload != null ? BitConverter.ToString(payload) : "null",
+								ex.ToString());
+							SendResponse(ctx, (int)header.Token, null, 0);
+							return;
+						}
 						try
 						{
 							lock (service)
@@ -257,25 +281,37 @@ namespace DiIiS_NA.LoginServer.Battle
 									Status = 0,
 									ListenerId = 0
 								};
-#if DEBUG
-								Logger.Debug(
-									$"Call: $[underline white]${service.GetType().Name}$[/]$, Service hash: $[underline white]${header.ServiceHash}$[/]$, Method: $[underline white]${method.Name}$[/]$, ID: $[olive]${header.MethodId}$[/]$");
 
-#endif
+Console.Error.WriteLine("[TRACE] Call: {0}, Hash: 0x{1:X8}, Method: {2}, MethodId: {3}, Token: {4}",
+									service.GetType().Name, header.ServiceHash, method.Name, header.MethodId, header.Token);
 
 								service.CallMethod(method, controller, message,
-									(IMessage m) => { SendResponse(ctx, (int)header.Token, m, controller.Status); });
+									(IMessage m) => {
+								Console.Error.WriteLine("[TRACE] Response for token {0}: status={1}, hasPayload={2}",
+											header.Token, controller.Status, m != null);
+										SendResponse(ctx, (int)header.Token, m, controller.Status);
+									});
 							}
 						}
 						catch (NotImplementedException)
 						{
 							Logger.Warn("Unimplemented service method:$[red]$ {0}.{1} $[/]$", service.GetType().Name, method.Name);
+							SendResponse(ctx, (int)header.Token, null, 0);
+						}
+						catch (Exception ex)
+						{
+							Logger.Error("Error in service method {0}.{1}: {2}", service.GetType().Name, method.Name, ex.Message);
+							SendResponse(ctx, (int)header.Token, null, 0);
 						}
 					}
 					else
 					{
+						Console.Error.WriteLine("[TRACE] UNCONNECTED service! serviceId={0}, hash=0x{1:X8}, methodId={2}, token={3}",
+							header.ServiceId, header.ServiceHash, header.MethodId, header.Token);
 						Logger.Warn(
 							$"Client is calling unconnected service (id: {header.ServiceId}, hash: {header.ServiceHash}  Method id: {header.MethodId})");
+						// Send OK response so the client doesn't treat it as fatal
+						SendResponse(ctx, (int)header.Token, null, 0);
 					}
 			}
 		}
@@ -416,10 +452,14 @@ namespace DiIiS_NA.LoginServer.Battle
 				str = method.Service.Options.UnknownFields[90000].LengthDelimitedList[0].ToStringUtf8().Remove(0, 2);
 			var serviceHash = StringHashHelper.HashIdentity(str);
 
+			Console.Error.WriteLine("[TRACE] CallMethod: service={0}, hash=0x{1:X8}, method={2}, hasServiceKey={3}",
+				serviceName, serviceHash, method.Name, Services.ContainsKey(serviceHash));
+
 			if (!Services.ContainsKey(serviceHash))
 			{
+				Console.Error.WriteLine("[TRACE] CallMethod FAILED: service hash 0x{0:X8} not registered! Registered: {1}",
+					serviceHash, string.Join(", ", Services.Keys.Select(k => $"0x{k:X8}")));
 				Logger.Warn("Service not found for client {0} [$[underline blue]$0x{1}$[/]$].", serviceName, serviceHash.ToString("X8"));
-				// in english: "Service not found for client {0} [0x{1}]."
 				return;
 			}
 
@@ -446,6 +486,28 @@ namespace DiIiS_NA.LoginServer.Battle
 			builder.SetToken(token);
 			builder.SetSize((uint)request.SerializedSize);
 			builder.SetStatus(status);
+
+			// Dump notification payload for debugging
+			if (serviceHash == 0xE1CB2EA8) // NotificationListener
+			{
+				var hdr = builder.Build();
+				var hdrBytes = hdr.ToByteString().ToByteArray();
+				Console.Error.WriteLine("[TRACE] SendRequest NOTIFICATION HEADER: hex={0}", BitConverter.ToString(hdrBytes));
+				var reqBytes = request.ToByteString().ToByteArray();
+				Console.Error.WriteLine("[TRACE] SendRequest NOTIFICATION: hash=0x{0:X8}, methodId={1}, token={2}, size={3}, hex={4}",
+					serviceHash, methodId, token, reqBytes.Length,
+					reqBytes.Length <= 1024 ? BitConverter.ToString(reqBytes) : BitConverter.ToString(reqBytes, 0, 1024) + "...(truncated)");
+				// Rebuild builder since Build() freezes it
+				builder = Header.CreateBuilder();
+				builder.SetServiceId((uint)_requestServiceId);
+				builder.SetServiceHash(serviceHash);
+				builder.SetMethodId(methodId);
+				if (listenerId != 0)
+					builder.SetObjectId(listenerId);
+				builder.SetToken(token);
+				builder.SetSize((uint)request.SerializedSize);
+				builder.SetStatus(status);
+			}
 
 			ctx.Channel.WriteAndFlushAsync(new BNetPacket(builder.Build(), request));
 		}
@@ -493,13 +555,27 @@ namespace DiIiS_NA.LoginServer.Battle
 		public static void SendResponse(IChannelHandlerContext ctx, int token, IMessage response, uint status)
 		{
 			Header.Builder builder = Header.CreateBuilder();
-			builder.SetServiceId((uint)_responseServiceId);
+			builder.SetServiceId((uint)_responseServiceId); // 254 (0xFE)
 			builder.SetToken((uint)token);
 			builder.SetStatus(status);
+			builder.SetIsResponse(true);
 			if (response != null)
+			{
 				builder.SetSize((uint)response.SerializedSize);
+			}
 
-			ctx.Channel.WriteAndFlushAsync(new BNetPacket(builder.Build(), response));
+			var hdr = builder.Build();
+			var hdrBytes = hdr.ToByteArray();
+			Console.Error.WriteLine("[TRACE] SendResponse HEADER: token={0}, status={1}, size={2}, hdrHex={3}",
+				token, status, response?.SerializedSize ?? 0, BitConverter.ToString(hdrBytes));
+			if (response != null && token >= 13)
+			{
+				var respBytes = response.ToByteString().ToByteArray();
+				Console.Error.WriteLine("[TRACE] SendResponse BODY: respHex={0}",
+					respBytes.Length <= 512 ? BitConverter.ToString(respBytes) : BitConverter.ToString(respBytes, 0, 512) + "...(truncated)");
+			}
+
+			ctx.Channel.WriteAndFlushAsync(new BNetPacket(hdr, response));
 		}
 		public void SendMotd()
 		{
@@ -548,8 +624,8 @@ namespace DiIiS_NA.LoginServer.Battle
 
 		public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
 		{
-			Logger.Error("Pipeline exception from {0}: {1}", SocketConnection?.RemoteAddress, exception.Message);
-			base.ExceptionCaught(context, exception);
+			Logger.Error("Pipeline exception from {0}: {1}\nStackTrace: {2}", SocketConnection?.RemoteAddress, exception.Message, exception.StackTrace);
+			//base.ExceptionCaught(context, exception);
 		}
 
 		private void DisconnectClient()

@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+**/.vs/
+**/.vscode/
+**/node_modules/
+*.md
+pictures/
+docs/
+db_old/
+.git/

@@ -3525,8 +3525,7 @@ namespace bgs.protocol.account.v1 {
     public override bool IsInitialized {
       get {
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         if (HasGameAccountId) {
           if (!GameAccountId.IsInitialized) return false;
         }
@@ -5828,8 +5827,7 @@ namespace bgs.protocol.account.v1 {
           if (!GameAccountId.IsInitialized) return false;
         }
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         return true;
       }
     }

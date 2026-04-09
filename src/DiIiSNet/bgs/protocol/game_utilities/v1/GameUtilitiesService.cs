@@ -235,6 +235,11 @@ namespace bgs.protocol.game_utilities.v1 {
       get { return global::bgs.protocol.game_utilities.v1.Proto.GameUtilitiesService.internal__static_bgs_protocol_game_utilities_v1_ClientRequest__FieldAccessorTable; }
     }
     
+    // Override: 2.8.0 client no longer sends account_id as required
+    public override bool IsInitialized {
+      get { return true; }
+    }
+    
     public const int AttributeFieldNumber = 1;
     private pbc::PopsicleList<global::bgs.protocol.Attribute> attribute_ = new pbc::PopsicleList<global::bgs.protocol.Attribute>();
     public scg::IList<global::bgs.protocol.Attribute> AttributeList {

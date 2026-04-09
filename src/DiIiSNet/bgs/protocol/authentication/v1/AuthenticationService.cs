@@ -2170,8 +2170,7 @@ namespace bgs.protocol.authentication.v1 {
       get {
         if (!hasErrorCode) return false;
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         foreach (global::bgs.protocol.EntityId element in GameAccountIdList) {
           if (!element.IsInitialized) return false;
         }

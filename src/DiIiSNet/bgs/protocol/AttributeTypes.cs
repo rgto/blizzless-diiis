@@ -32,16 +32,17 @@ namespace bgs.protocol {
     private static pbd::FileDescriptor descriptor;
     
     static AttributeTypes() {
+      // 2.8.0 field numbers: Int=2, Float=3, String=4, Message=5, Uint=6, EntityId=7, Bool=11, Blob=12, Fourcc=13
       byte[] descriptorData = global::System.Convert.FromBase64String(
           "CidiZ3MvbG93L3BiL2NsaWVudC9hdHRyaWJ1dGVfdHlwZXMucHJvdG8SDGJn" + 
           "cy5wcm90b2NvbBokYmdzL2xvdy9wYi9jbGllbnQvZW50aXR5X3R5cGVzLnBy" + 
-          "b3RvIs8CCgdWYXJpYW50Eh0KCmJvb2xfdmFsdWUYAiABKAhSCWJvb2xWYWx1" + 
-          "ZRIbCglpbnRfdmFsdWUYAyABKANSCGludFZhbHVlEh8KC2Zsb2F0X3ZhbHVl" + 
-          "GAQgASgBUgpmbG9hdFZhbHVlEiEKDHN0cmluZ192YWx1ZRgFIAEoCVILc3Ry" + 
-          "aW5nVmFsdWUSHQoKYmxvYl92YWx1ZRgGIAEoDFIJYmxvYlZhbHVlEiMKDW1l" + 
-          "c3NhZ2VfdmFsdWUYByABKAxSDG1lc3NhZ2VWYWx1ZRIhCgxmb3VyY2NfdmFs" + 
-          "dWUYCCABKAlSC2ZvdXJjY1ZhbHVlEh0KCnVpbnRfdmFsdWUYCSABKARSCXVp" + 
-          "bnRWYWx1ZRI+Cg9lbnRpdHlfaWRfdmFsdWUYCiABKAsyFi5iZ3MucHJvdG9j" + 
+          "b3RvIs8CCgdWYXJpYW50Eh0KCmJvb2xfdmFsdWUYCyABKAhSCWJvb2xWYWx1" + 
+          "ZRIbCglpbnRfdmFsdWUYAiABKANSCGludFZhbHVlEh8KC2Zsb2F0X3ZhbHVl" + 
+          "GAMgASgBUgpmbG9hdFZhbHVlEiEKDHN0cmluZ192YWx1ZRgEIAEoCVILc3Ry" + 
+          "aW5nVmFsdWUSHQoKYmxvYl92YWx1ZRgMIAEoDFIJYmxvYlZhbHVlEiMKDW1l" + 
+          "c3NhZ2VfdmFsdWUYBSABKAxSDG1lc3NhZ2VWYWx1ZRIhCgxmb3VyY2NfdmFs" + 
+          "dWUYDSABKAlSC2ZvdXJjY1ZhbHVlEh0KCnVpbnRfdmFsdWUYBiABKARSCXVp" + 
+          "bnRWYWx1ZRI+Cg9lbnRpdHlfaWRfdmFsdWUYByABKAsyFi5iZ3MucHJvdG9j" + 
           "b2wuRW50aXR5SWRSDWVudGl0eUlkVmFsdWUiTAoJQXR0cmlidXRlEhIKBG5h" + 
           "bWUYASACKAlSBG5hbWUSKwoFdmFsdWUYAiACKAsyFS5iZ3MucHJvdG9jb2wu" + 
           "VmFyaWFudFIFdmFsdWUi2QEKD0F0dHJpYnV0ZUZpbHRlchI3CgJvcBgBIAIo" + 
@@ -104,7 +105,7 @@ namespace bgs.protocol {
       get { return global::bgs.protocol.AttributeTypes.internal__static_bgs_protocol_Variant__FieldAccessorTable; }
     }
     
-    public const int BoolValueFieldNumber = 2;
+    public const int BoolValueFieldNumber = 11;
     private bool hasBoolValue;
     private bool boolValue_;
     public bool HasBoolValue {
@@ -114,7 +115,7 @@ namespace bgs.protocol {
       get { return boolValue_; }
     }
     
-    public const int IntValueFieldNumber = 3;
+    public const int IntValueFieldNumber = 2;
     private bool hasIntValue;
     private long intValue_;
     public bool HasIntValue {
@@ -124,7 +125,7 @@ namespace bgs.protocol {
       get { return intValue_; }
     }
     
-    public const int FloatValueFieldNumber = 4;
+    public const int FloatValueFieldNumber = 3;
     private bool hasFloatValue;
     private double floatValue_;
     public bool HasFloatValue {
@@ -134,7 +135,7 @@ namespace bgs.protocol {
       get { return floatValue_; }
     }
     
-    public const int StringValueFieldNumber = 5;
+    public const int StringValueFieldNumber = 4;
     private bool hasStringValue;
     private string stringValue_ = "";
     public bool HasStringValue {
@@ -144,7 +145,7 @@ namespace bgs.protocol {
       get { return stringValue_; }
     }
     
-    public const int BlobValueFieldNumber = 6;
+    public const int BlobValueFieldNumber = 12;
     private bool hasBlobValue;
     private pb::ByteString blobValue_ = pb::ByteString.Empty;
     public bool HasBlobValue {
@@ -154,7 +155,7 @@ namespace bgs.protocol {
       get { return blobValue_; }
     }
     
-    public const int MessageValueFieldNumber = 7;
+    public const int MessageValueFieldNumber = 5;
     private bool hasMessageValue;
     private pb::ByteString messageValue_ = pb::ByteString.Empty;
     public bool HasMessageValue {
@@ -164,7 +165,7 @@ namespace bgs.protocol {
       get { return messageValue_; }
     }
     
-    public const int FourccValueFieldNumber = 8;
+    public const int FourccValueFieldNumber = 13;
     private bool hasFourccValue;
     private string fourccValue_ = "";
     public bool HasFourccValue {
@@ -174,7 +175,7 @@ namespace bgs.protocol {
       get { return fourccValue_; }
     }
     
-    public const int UintValueFieldNumber = 9;
+    public const int UintValueFieldNumber = 6;
     private bool hasUintValue;
     private ulong uintValue_;
     public bool HasUintValue {
@@ -184,7 +185,7 @@ namespace bgs.protocol {
       get { return uintValue_; }
     }
     
-    public const int EntityIdValueFieldNumber = 10;
+    public const int EntityIdValueFieldNumber = 7;
     private bool hasEntityIdValue;
     private global::bgs.protocol.EntityId entityIdValue_;
     public bool HasEntityIdValue {

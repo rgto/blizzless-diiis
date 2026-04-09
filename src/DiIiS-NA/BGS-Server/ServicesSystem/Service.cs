@@ -31,6 +31,12 @@ namespace DiIiS_NA.LoginServer.ServicesSystem
         private readonly static Dictionary<Type, ServiceAttribute> ProvidedServices = new();
         private readonly static Dictionary<Type, IService> Services = new();
 
+        // Aliases for service hashes that changed between client versions
+        private static readonly Dictionary<uint, uint> _hashAliases = new()
+        {
+            { 0x5DBB51C2, 0x38 } // 2.8.0 client routes GameUtilities via this hash
+        };
+
         static Service()
         {
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(type => type.GetInterface(nameof(IServerService)) != null))
@@ -55,6 +61,9 @@ namespace DiIiS_NA.LoginServer.ServicesSystem
             {
                 return serviceInfo.ServiceID;
             }
+
+            if (_hashAliases.TryGetValue(serviceHash, out var aliasedServiceId))
+                return aliasedServiceId;
 
             return _notImplementedServiceCounter++;
         }

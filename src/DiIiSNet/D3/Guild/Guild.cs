@@ -1110,8 +1110,7 @@ namespace D3.Guild {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasRankId) return false;
+                if (!hasRankId) return false;
         if (!hasNote) return false;
         if (!hasNewsTime) return false;
         if (!hasAchievementPoints) return false;
@@ -1877,8 +1876,7 @@ namespace D3.Guild {
     public override bool IsInitialized {
       get {
         if (!hasNewsId) return false;
-        if (!hasAccountId) return false;
-        if (!hasNewsType) return false;
+                if (!hasNewsType) return false;
         if (!hasNewsTime) return false;
         return true;
       }
@@ -2985,8 +2983,7 @@ namespace D3.Guild {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasInviterId) return false;
+                if (!hasInviterId) return false;
         if (!hasInviteTime) return false;
         if (!hasInviteType) return false;
         if (!hasExpireTime) return false;
@@ -12012,8 +12009,7 @@ namespace D3.Guild {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasNumGroupsCreated) return false;
+                if (!hasNumGroupsCreated) return false;
         if (!hasRecentGroupsCreated) return false;
         if (!hasRecentGroupsLastUpdate) return false;
         if (!hasNumClansCreated) return false;

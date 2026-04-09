@@ -111,8 +111,7 @@ namespace bgs.protocol.club.v1 {
     public override bool IsInitialized {
       get {
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         return true;
       }
     }

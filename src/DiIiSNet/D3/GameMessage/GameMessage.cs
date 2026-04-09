@@ -1404,9 +1404,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        foreach (global::D3.Hero.Digest element in DigestListList) {
+                        foreach (global::D3.Hero.Digest element in DigestListList) {
           if (!element.IsInitialized) return false;
         }
         return true;
@@ -2133,9 +2131,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -6702,9 +6698,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -7883,9 +7877,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -8267,10 +8259,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasVersion) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (HasRecreateItemList) {
+                if (!hasVersion) return false;
+                if (HasRecreateItemList) {
           if (!RecreateItemList.IsInitialized) return false;
         }
         if (HasSourceAccountId) {
@@ -8800,10 +8790,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!HeroId.IsInitialized) return false;
+                if (!hasHeroId) return false;
+                if (!HeroId.IsInitialized) return false;
         return true;
       }
     }
@@ -9181,10 +9169,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasUndeleteHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!UndeleteHeroId.IsInitialized) return false;
+                if (!hasUndeleteHeroId) return false;
+                if (!UndeleteHeroId.IsInitialized) return false;
         if (HasReplaceHeroId) {
           if (!ReplaceHeroId.IsInitialized) return false;
         }
@@ -9613,10 +9599,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!HeroId.IsInitialized) return false;
+                if (!hasHeroId) return false;
+                if (!HeroId.IsInitialized) return false;
         return true;
       }
     }
@@ -9974,9 +9958,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -10285,10 +10267,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!HeroId.IsInitialized) return false;
+                if (!hasHeroId) return false;
+                if (!HeroId.IsInitialized) return false;
         return true;
       }
     }
@@ -10646,9 +10626,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -10957,10 +10935,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasVersion) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                if (!hasVersion) return false;
+                return true;
       }
     }
     
@@ -11302,10 +11278,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasVersion) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                if (!hasVersion) return false;
+                return true;
       }
     }
     
@@ -11657,11 +11631,9 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
+                if (!hasHeroId) return false;
         if (!hasItemId) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!HeroId.IsInitialized) return false;
+                if (!HeroId.IsInitialized) return false;
         if (!ItemId.IsInitialized) return false;
         return true;
       }
@@ -13063,9 +13035,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -13364,9 +13334,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -13675,10 +13643,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasVersion) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                if (!hasVersion) return false;
+                return true;
       }
     }
     
@@ -14010,9 +13976,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -17832,9 +17796,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -18178,9 +18140,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -19301,10 +19261,8 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                if (!hasHeroId) return false;
+                return true;
       }
     }
     
@@ -19636,9 +19594,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -21519,11 +21475,9 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasCareId) return false;
+                if (!hasCareId) return false;
         if (!hasLocale) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                return true;
       }
     }
     
@@ -21888,9 +21842,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                        return true;
       }
     }
     
@@ -24023,11 +23975,9 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasBanner) return false;
+                if (!hasBanner) return false;
         if (!hasDbErrCode) return false;
-        if (!AccountId.IsInitialized) return false;
-        if (!Banner.IsInitialized) return false;
+                if (!Banner.IsInitialized) return false;
         return true;
       }
     }
@@ -31151,12 +31101,10 @@ namespace D3.GameMessage {
     public override bool IsInitialized {
       get {
         if (!hasGuildId) return false;
-        if (!hasAccountId) return false;
-        if (!hasNewsType) return false;
+                if (!hasNewsType) return false;
         if (!hasNewsData) return false;
         if (!hasNewsFlags) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                return true;
       }
     }
     
@@ -32337,8 +32285,7 @@ namespace D3.GameMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasGuildId) return false;
+                if (!hasGuildId) return false;
         return true;
       }
     }
@@ -37579,8 +37526,7 @@ namespace D3.GameMessage {
     public override bool IsInitialized {
       get {
         if (!hasGuildId) return false;
-        if (!hasAccountId) return false;
-        return true;
+                return true;
       }
     }
     

@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DiIiS_NA.LoginServer.ServicesSystem.Services
 {
@@ -32,7 +34,10 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
             Client = inClient;
         }
 
-        public void run()
+        /// <summary>
+        /// Build the InitialLoginDataResponse containing all login data.
+        /// </summary>
+        public InitialLoginDataResponse BuildResponse()
         {
             InitialLoginData.Builder Init = InitialLoginData.CreateBuilder();
             Init.SetOutstandingOrder(D3.Store.Order.CreateBuilder().SetAcknowledged(true).SetErrorCode(0).SetStatus(0)
@@ -69,7 +74,10 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
 
             Init.SetGameAccountSettings(GAS);
             Init.SetHeroDigests(d);
-            Init.SetAccountDigest(Client.Account.GameAccount.Digest);
+            // Add PatchVersion to AccountDigest — 2.8.0 client requires this
+            Init.SetAccountDigest(Client.Account.GameAccount.Digest.ToBuilder()
+                .SetPatchVersion("2.8.0.99920")
+                .Build());
 
             const int seasonNumber = 1;
             const int seasonState = 1;
@@ -171,40 +179,24 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
             //.SetExpireTime(900000) - Delay in milliseconds)
 
             Init.SetContentLicenses(licences);
+            Init.SetSessionFlags(0U); // 2.8.0 requires this field
 
             // Build response
             InitialLoginDataResponse.Builder res = InitialLoginDataResponse.CreateBuilder();
             res.SetErrorCode(0U)
-                .SetServiceId(Client.GuildChannelsRevealed ? 0U : 1U)
+                .SetServiceId(1U) // Always 1 for initial login
                 .SetLoginData(Init);
 
-            // Build notification
-            bgs.protocol.notification.v1.Notification.Builder builder =
-                bgs.protocol.notification.v1.Notification.CreateBuilder();
-            builder.SetSenderId(bgs.protocol.EntityId.CreateBuilder().SetHigh(0).SetLow(0));
-            builder.SetTargetAccountId(Client.Account.BnetEntityId);
-            builder.SetTargetId(Client.Account.GameAccount.BnetEntityId);
+            var builtRes = res.Build();
+            var resBytes = builtRes.ToByteArray();
+            Console.Error.WriteLine("[TRACE] InitialLoginDataResponse ({0}B): errorCode={1}, serviceId={2}, hasLoginData={3}",
+                resBytes.Length, builtRes.ErrorCode, builtRes.ServiceId, builtRes.HasLoginData);
+            Console.Error.WriteLine("[TRACE] InitialLoginData fields: hasSettings={0}, hasHeroDigests={1}, hasAccountDigest={2}, hasGuilds={3}, hasGuildInvites={4}, hasSyncedVars={5}, hasMatchmakingPool={6}, erasCount={7}, hasContentLicenses={8}, hasAchievementsContentHandle={9}, hasMissingEntitlements={10}, hasOutstandingOrder={11}, hasSeenTutorials={12}, hasLogonTime={13}, hasChatRestriction={14}, hasSessionFlags={15}",
+                Init.HasGameAccountSettings, Init.HasHeroDigests, Init.HasAccountDigest, Init.HasGuilds, Init.HasGuildInvites, Init.HasSyncedVars, Init.HasMatchmakingPool, Init.ErasCount, Init.HasContentLicenses, Init.HasAchievementsContentHandle, Init.HasMissingEntitlements, Init.HasOutstandingOrder, Init.HasSeenTutorials, Init.HasLogonTime, Init.HasChatRestrictionContentLicenseId, Init.HasSessionFlags);
+            if (Init.HasHeroDigests)
+                Console.Error.WriteLine("[TRACE] HeroDigests count: {0}", Init.HeroDigests.DigestListCount);
 
-            builder.SetType("D3.NotificationMessage");
-            bgs.protocol.Attribute.Builder messageId = bgs.protocol.Attribute.CreateBuilder();
-            messageId.SetName("D3.NotificationMessage.MessageId")
-                .SetValue(Variant.CreateBuilder().SetIntValue(1)); // InitialLoginDataResponse
-            bgs.protocol.Attribute.Builder payload = bgs.protocol.Attribute.CreateBuilder();
-            payload.SetName("D3.NotificationMessage.Payload")
-                .SetValue(Variant.CreateBuilder().SetMessageValue(res.Build().ToByteString()));
-            builder.AddAttribute(messageId);
-            builder.AddAttribute(payload);
-
-            Client.MakeRpc((lid) =>
-                NotificationListener.CreateStub(Client)
-                    .OnNotificationReceived(new HandlerController() { ListenerId = lid }, builder.Build(),
-                        callback => { }));
-
-            if (!Client.GuildChannelsRevealed)
-            {
-                Client.GuildChannelsRevealed = true;
-                GuildManager.ReplicateGuilds(Client.Account.GameAccount);
-            }
+            return builtRes;
         }
     }
 
@@ -220,8 +212,44 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
         {
             ClientResponse.Builder builder = ClientResponse.CreateBuilder();
             var attr = bgs.protocol.Attribute.CreateBuilder();
-            int messageId = (int)request.GetAttribute(1).Value.IntValue;
 
+            // Build a dictionary of attributes by name for easy lookup
+            var attrByName = new Dictionary<string, bgs.protocol.Variant>();
+            for (int _i = 0; _i < request.AttributeCount; _i++)
+            {
+                var _a = request.GetAttribute(_i);
+                attrByName[_a.Name] = _a.Value;
+                var _v = _a.Value;
+                var _rawBytes = _v.ToByteArray();
+                Console.Error.WriteLine("[TRACE]   attr[{0}]: name='{1}', rawHex=({2}B) {3}",
+                    _i, _a.Name, _rawBytes.Length, BitConverter.ToString(_rawBytes));
+                Console.Error.WriteLine("[TRACE]     intVal={0}, uintVal={1}, strVal={2}, msgVal={3}, boolVal={4}, fourccVal={5}",
+                    _v.HasIntValue ? _v.IntValue.ToString() : "N",
+                    _v.HasUintValue ? _v.UintValue.ToString() : "N",
+                    _v.HasStringValue ? _v.StringValue : "N",
+                    _v.HasMessageValue ? _v.MessageValue.Length.ToString() + "B" : "N",
+                    _v.HasBoolValue ? _v.BoolValue.ToString() : "N",
+                    _v.HasFourccValue ? _v.FourccValue : "N");
+            }
+            // Also dump the raw request bytes
+            var _reqBytes = request.ToByteArray();
+            Console.Error.WriteLine("[TRACE] Request raw ({0}B): {1}", _reqBytes.Length,
+                BitConverter.ToString(_reqBytes.Length > 200 ? _reqBytes.Take(200).ToArray() : _reqBytes));
+
+            // Extract messageId - 2.7.4 uses IntValue at index 1; 2.8.0 uses BoolValue/different encoding
+            int messageId;
+            if (attrByName.TryGetValue("CustomMessageId", out var msgIdVariant))
+            {
+                if (msgIdVariant.HasIntValue) messageId = (int)msgIdVariant.IntValue;
+                else if (msgIdVariant.HasUintValue) messageId = (int)msgIdVariant.UintValue;
+                else messageId = -1; // 2.8.0 version handshake - no numeric messageId
+            }
+            else
+            {
+                messageId = (int)request.GetAttribute(1).Value.IntValue; // fallback to old method
+            }
+
+            Console.Error.WriteLine("[TRACE] ProcessClientRequest: messageId={0}, attributeCount={1}", messageId, request.AttributeCount);
 
 #if DEBUG
             if (messageId != 270)
@@ -264,15 +292,31 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
                                 .Build();
                             builder.AddAttribute(attrId);
                             break;
-                        case 6: // InitialLoginDataRequest -> InitialLoginDataQueuedResponse
-                            ByteString loginData = OnInitialLoginDataRequest(((HandlerController)controller).Client,
-                                request.GetAttribute(2).Value.MessageValue);
-                            attr.SetValue(Variant.CreateBuilder().SetMessageValue(loginData));
+                        case 6: // InitialLoginDataRequest -> QueuedResponse + async notification
+                            Console.Error.WriteLine("[TRACE] BUILD_V5: case 6 - queued response + notification");
+                            // Return QUEUED response (full data comes via notification)
+                            var queuedResponse = D3.GameMessage.InitialLoginDataQueuedResponse.CreateBuilder()
+                                .SetServiceId(1U)
+                                .SetTimeoutTickInterval(2000)
+                                .Build();
+                            attr.SetValue(Variant.CreateBuilder().SetMessageValue(queuedResponse.ToByteString()));
                             break;
                         case 7:
                             var getAccountSettings = GetGameAccountSettings(((HandlerController)controller).Client);
                             attr.SetValue(Variant.CreateBuilder().SetMessageValue(getAccountSettings)
                                 .Build());
+                            // Client processed InitialLoginData — safe to replicate guilds now
+                            {
+                                var guildClient = ((HandlerController)controller).Client;
+                                if (!guildClient.GuildChannelsRevealed)
+                                {
+                                    guildClient.GuildChannelsRevealed = true;
+                                    Task.Run(() =>
+                                    {
+                                        GuildManager.ReplicateGuilds(guildClient.Account.GameAccount);
+                                    });
+                                }
+                            }
                             break;
                         case 8:
                             var setAccountSettings = SetGameAccountSettings(
@@ -507,15 +551,68 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
                         builder.AddAttribute(attr);
                     }
 
+                    // Echo back CustomMessageId for 2.8.0 client compatibility
+                    var respMsgId = bgs.protocol.Attribute.CreateBuilder()
+                        .SetName("CustomMessageId")
+                        .SetValue(Variant.CreateBuilder().SetIntValue(messageId).Build())
+                        .Build();
+                    builder.AddAttribute(respMsgId);
+
                     break;
             }
 
             done(builder.Build());
+            Console.Error.WriteLine("[TRACE] ProcessClientRequest done: messageId={0}, hasAttrValue={1}", messageId, attr.HasValue);
 
             if (messageId == 6)
             {
+                Console.Error.WriteLine("[TRACE] Starting InitialLoginTask");
                 var LogTask = new InitialLoginTask(((HandlerController)controller).Client);
-                LogTask.run();
+                var builtResponse = LogTask.BuildResponse();
+
+                // Send as v2 notification (2.8.0 client uses v2 NotificationListener)
+                var client = ((HandlerController)controller).Client;
+
+                var msgIdAttr = bgs.protocol.v2.Attribute.CreateBuilder()
+                    .SetName("D3.NotificationMessage.MessageId")
+                    .SetValue(bgs.protocol.v2.Variant.CreateBuilder().SetIntValue(1))
+                    .Build();
+                var payloadAttr = bgs.protocol.v2.Attribute.CreateBuilder()
+                    .SetName("D3.NotificationMessage.Payload")
+                    .SetValue(bgs.protocol.v2.Variant.CreateBuilder().SetBlobValue(builtResponse.ToByteString()))
+                    .Build();
+
+                var v2Notification = bgs.protocol.notification.v2.client.Notification.CreateBuilder()
+                    .SetType("D3.NotificationMessage")
+                    .SetSender(bgs.protocol.notification.v2.client.UserDescription.CreateBuilder()
+                        .SetAccountId(0))
+                    .SetTarget(bgs.protocol.notification.v2.client.UserDescription.CreateBuilder()
+                        .SetAccountId(client.Account.BnetEntityId.Low))
+                    .AddAttribute(msgIdAttr)
+                    .AddAttribute(payloadAttr)
+                    .SetCreationTimeMs((ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+                    .Build();
+
+                var v2Received = bgs.protocol.notification.v2.client.NotificationReceivedNotification.CreateBuilder()
+                    .AddNotifications(v2Notification)
+                    .Build();
+
+                Console.Error.WriteLine("[TRACE] v2 NotificationReceivedNotification ({0}B)", v2Received.SerializedSize);
+
+                try
+                {
+                    if (client.SocketConnection != null && client.SocketConnection.Active)
+                    {
+                        bgs.protocol.notification.v2.client.NotificationListener.CreateStub(client)
+                            .OnNotificationReceived(new HandlerController() { ListenerId = 0 },
+                                v2Received, callback => { });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine("[TRACE] v2 Notification send failed: " + ex.Message);
+                }
+                Console.Error.WriteLine("[TRACE] InitialLoginTask completed");
             }
         }
 
@@ -1072,13 +1169,19 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
         private ByteString OnHeroDigestListRequest(BattleClient client, ByteString data)
         {
             HeroDigestListRequest request = HeroDigestListRequest.ParseFrom(data);
+            Console.Error.WriteLine("[TRACE] OnHeroDigestListRequest: toonIdCount={0}, dataLen={1}", request.ToonIdCount, data.Length);
+            for (int i = 0; i < request.ToonIdCount; i++)
+                Console.Error.WriteLine("[TRACE]   toonId[{0}]={1}", i, request.GetToonId(i));
             HeroDigestListResponse.Builder builder = HeroDigestListResponse.CreateBuilder();
             foreach (var toon in request.ToonIdList)
             {
-                builder.AddDigestList(ToonManager.GetToonByLowId(toon).Digest);
+                var toonObj = ToonManager.GetToonByLowId(toon);
+                Console.Error.WriteLine("[TRACE]   toon={0}, digest={1}", toon, toonObj?.Digest != null ? toonObj.Digest.SerializedSize + "bytes" : "null");
+                builder.AddDigestList(toonObj.Digest);
             }
-
-            return builder.Build().ToByteString();
+            var result = builder.Build().ToByteString();
+            Console.Error.WriteLine("[TRACE] OnHeroDigestListRequest response: {0} bytes, digestCount={1}", result.Length, builder.DigestListCount);
+            return result;
         }
 
         #endregion
@@ -1140,6 +1243,122 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
                 .SetTimeoutTickInterval(2000);
 
             return res.Build().ToByteString();
+        }
+
+        private ByteString BuildFullInitialLoginDataResponse(BattleClient client, ByteString data)
+        {
+            var req = InitialLoginDataRequest.ParseFrom(data);
+
+            InitialLoginData.Builder Init = InitialLoginData.CreateBuilder();
+            Init.SetOutstandingOrder(D3.Store.Order.CreateBuilder().SetAcknowledged(true).SetErrorCode(0).SetStatus(0)
+                .SetTransactionId(0));
+
+            var GAS = D3.Client.GameAccountSettings.CreateBuilder()
+                    .SetShowDifficultySelector(false)
+                    .SetUseGameHandicapDeprecated(true)
+                    .SetSeasonJourneySeasonNumber(10)
+                    .SetViewedAnniversaryScreenYear(1)
+                    .SetAccountFlags(0)
+                    .SetAccountFlags((uint)D3.Account.Digest.Types.Flags.MASTER_DIFFICULTY_UNLOCKED)
+                    .SetAchievementsTimeLastViewed(DateTimeExtensions.ToUnixTime(DateTime.UtcNow))
+                    .SetViewedWhatsNewVersion(20)
+                    .SetViewedWhatsNewSeason(20)
+                    .SetRmtLastUsedCurrency("PLATINUM")
+                    .SetRmtPreferredCurrency("PLATINUM")
+                ;
+
+            Init.SetChatRestrictionContentLicenseId(0);
+
+            Init.SetAchievementsContentHandle(D3.OnlineService.ContentHandle.CreateBuilder()
+                .SetHash("20375546335DA13E31554A104FE036B5BCC878D715108F1FCEB50AB85BD87478").SetRegion("EU")
+                .SetUsage(".achu"));
+            HeroDigestListResponse.Builder d = HeroDigestListResponse.CreateBuilder();
+            foreach (Toon t in client.Account.GameAccount.Toons)
+            {
+                d.AddDigestList(t.Digest);
+                GAS.AddHeroListOrder(t.D3EntityId);
+            }
+
+            Init.SetGameAccountSettings(GAS);
+            Init.SetHeroDigests(d);
+            Init.SetAccountDigest(client.Account.GameAccount.Digest);
+
+            Init.SetSyncedVars(
+                " OnlineService.Season.Num=1" +
+                " OnlineService.Season.State=1" +
+                " OnlineService.Leaderboard.Era=1" +
+                " OnlineService.AnniversaryEvent.Status=1" +
+                " ChallengeRift.ChallengeNumber=1" +
+                " OnlineService.FreeToPlay=True" +
+                " OnlineService.Store.Status=1" +
+                " OnlineService.Store.ProductCatalogDigest=C42DC6117A7008EDA2006542D6C07EAD096DAD90" +
+                " OnlineService.Store.ProductCatalogVersion=633565800390338000" +
+                " OnlineService.Region.Id=1");
+
+            Init.SetSeenTutorials(ByteString.CopyFrom(client.Account.GameAccount.DBGameAccount.SeenTutorials));
+            Init.SetMatchmakingPool("Default");
+
+            var guildInfo = D3.Guild.GuildInfoList.CreateBuilder();
+            if (client.Account.GameAccount.Clan != null || client.Account.GameAccount.Communities.Length > 0)
+            {
+                if (client.Account.GameAccount.Clan != null)
+                {
+                    var clan = client.Account.GameAccount.Clan;
+                    var clanInfo = D3.Guild.GuildInfo.CreateBuilder()
+                        .SetGuildId(clan.PersistentId)
+                        .SetGuildCategory(0)
+                        .SetGuildLeaderId(clan.Owner.PersistentID)
+                        .SetName(clan.FullName)
+                        .SetSearchable(clan.IsLFM)
+                        .SetMemberNewsTime(clan.NewsTime)
+                        .AddValidatedMemberIds(client.Account.GameAccount.PersistentID)
+                        .SetRankId(clan.GetRank(client.Account.GameAccount.PersistentID))
+                        .SetTotalMembers((uint)clan.Members.Count);
+                    guildInfo.AddGuilds(clanInfo);
+                }
+                foreach (var community in client.Account.GameAccount.Communities)
+                {
+                    var communityInfo = D3.Guild.GuildInfo.CreateBuilder()
+                        .SetGuildId(community.PersistentId)
+                        .SetGuildLeaderId(community.Owner.PersistentID)
+                        .SetGuildCategory(community.Category)
+                        .SetName(community.Name)
+                        .SetSearchable(community.IsLFM)
+                        .SetMemberNewsTime(community.NewsTime)
+                        .AddValidatedMemberIds(client.Account.GameAccount.PersistentID)
+                        .SetRankId(community.GetRank(client.Account.GameAccount.PersistentID))
+                        .SetTotalMembers((uint)community.Members.Count);
+                    guildInfo.AddGuilds(communityInfo);
+                }
+            }
+            Init.SetGuilds(guildInfo);
+            Init.SetGuildInvites(D3.Guild.InviteInfoList.CreateBuilder()
+                .AddRangeInvites(client.Account.GameAccount.GuildInvites));
+
+            Init.AddEras(EraInfo.CreateBuilder().SetId(0).SetNameDeprecated("TestEra"));
+            Init.SetLogonTime(DateTime.UtcNow.ToUnixTime());
+            Init.SetMissingEntitlements(D3.Store.MissingEntitlements.CreateBuilder()
+                .AddEntitlement(D3.Store.MissingEntitlement.CreateBuilder()));
+
+            ContentLicenses.Builder licences = ContentLicenses.CreateBuilder();
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(0).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(1).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(2).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(3).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(4).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(5).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(6).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(10).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(15).SetQuantity(1));
+            licences.AddLicenses(ContentLicense.CreateBuilder().SetId(20).SetQuantity(1));
+            Init.SetContentLicenses(licences);
+
+            InitialLoginDataResponse.Builder response = InitialLoginDataResponse.CreateBuilder();
+            response.SetErrorCode(0U)
+                .SetServiceId(client.GuildChannelsRevealed ? 0U : 1U)
+                .SetLoginData(Init);
+
+            return response.Build().ToByteString();
         }
 
         #endregion

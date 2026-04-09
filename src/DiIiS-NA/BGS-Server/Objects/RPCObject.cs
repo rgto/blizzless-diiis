@@ -34,7 +34,9 @@ namespace DiIiS_NA.LoginServer.Objects
 			this.Subscribers.TryAdd(client, 0);
 			client.MapLocalObjectId(this.DynamicId, remoteObjectId);
 
-			if (client.SocketConnection.Active)
+			// TEMPORARILY suppress ChannelListener callbacks during initial login
+			// to test if they cause the "Retrieving Hero List" disconnect
+			if (client.SocketConnection.Active && client.GuildChannelsRevealed)
 			{
 				var operations = GetSubscriptionNotifications();
 				if (operations.Count > 0)

@@ -20,6 +20,14 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
 
         public override void Connect(IRpcController controller, ConnectRequest request, Action<ConnectResponse> done)
         {
+            // Dump ConnectRequest for debugging
+            var reqBytes = request.ToByteArray();
+            Console.Error.WriteLine("[TRACE] ConnectRequest ({0}B): useBindlessRpc={1}, hasBindReq={2}, hex={3}",
+                reqBytes.Length,
+                request.HasUseBindlessRpc ? request.UseBindlessRpc.ToString() : "N/A",
+                request.HasBindRequest ? "YES" : "NO",
+                reqBytes.Length <= 256 ? BitConverter.ToString(reqBytes) : BitConverter.ToString(reqBytes, 0, 256) + "...(truncated)");
+
             var builder = ConnectResponse.CreateBuilder()
                 .SetServerId(ProcessId.CreateBuilder().SetLabel(0).SetEpoch(DateTime.Now.ToUnixTime()))
                 .SetServerTime(DateTime.Now.ToUnixTime())
@@ -37,6 +45,7 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
             ((HandlerController) controller).Client.Services.Add(0xB96F5297, 0x08);
             ((HandlerController) controller).Client.Services.Add(0x6F259A13, 0x09);
             ((HandlerController) controller).Client.Services.Add(0xE1CB2EA8, 0x0A);
+            ((HandlerController) controller).Client.Services.Add(0x2362BECD, 0x0A); // v2 NotificationListener
             ((HandlerController) controller).Client.Services.Add(0xBC872C22, 0x0B);
             ((HandlerController) controller).Client.Services.Add(0x7FE36B32, 0x0C);
             ((HandlerController) controller).Client.Services.Add(233634817, 0x0D);
@@ -73,6 +82,7 @@ namespace DiIiS_NA.LoginServer.ServicesSystem.Services
 
         public override void RequestDisconnect(IRpcController controller, DisconnectRequest request, Action<NO_RESPONSE> done)
         {
+            Console.Error.WriteLine("[TRACE] RequestDisconnect: errorCode={0}", request.HasErrorCode ? request.ErrorCode.ToString() : "NONE");
             Logger.Info("Client - {0} , disconnected", ((HandlerController) controller).Client.SocketConnection.RemoteAddress);
             DisconnectClient((HandlerController) controller);
             if (((HandlerController) controller).Client.Account != null)

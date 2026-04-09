@@ -944,10 +944,8 @@ namespace D3.PartyMessage {
     
     public override bool IsInitialized {
       get {
-        if (!hasAccountId) return false;
-        if (!hasHeroId) return false;
-        if (!AccountId.IsInitialized) return false;
-        return true;
+                if (!hasHeroId) return false;
+                return true;
       }
     }
     

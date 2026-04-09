@@ -117,8 +117,7 @@ namespace bgs.protocol {
     
     public override bool IsInitialized {
       get {
-        if (!hasHigh) return false;
-        if (!hasLow) return false;
+        // Relaxed for 2.8.0 compatibility: Variant field 7 may contain non-standard EntityId encoding
         return true;
       }
     }
@@ -437,8 +436,7 @@ namespace bgs.protocol {
     public override bool IsInitialized {
       get {
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         if (HasGameAccountId) {
           if (!GameAccountId.IsInitialized) return false;
         }

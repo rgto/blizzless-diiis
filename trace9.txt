@@ -1,0 +1,93 @@
+[TRACE] Call: ConnectionSvc, Hash: 0x65446991, Method: Connect, MethodId: 1, 
+Token: 0
+[TRACE] Response for token 0: status=0, hasPayload=True
+[TRACE] Call: AuthenticationService, Hash: 0x0DECFC01, Method: Logon, 
+MethodId: 1, Token: 1
+[TRACE] Response for token 1: status=0, hasPayload=True
+[TRACE] CallMethod: service=bgs.protocol.challenge.v1.ChallengeListener, 
+hash=0xBBDA171F, method=OnExternalChallenge, hasServiceKey=True
+[TRACE] Call: AuthenticationService, Hash: 0x0DECFC01, Method: 
+VerifyWebCredentials, MethodId: 7, Token: 2
+[TRACE] Response for token 2: status=0, hasPayload=True
+[TRACE] CallMethod: 
+service=bgs.protocol.authentication.v1.AuthenticationListener, 
+hash=0x71240E35, method=OnLogonComplete, hasServiceKey=True
+[TRACE] CallMethod: 
+service=bgs.protocol.authentication.v1.AuthenticationListener, 
+hash=0x71240E35, method=OnGameAccountSelected, hasServiceKey=True
+[TRACE] Call: AccountService, Hash: 0x62DA0891, Method: GetAccountState, 
+MethodId: 30, Token: 3
+[TRACE] Response for token 3: status=0, hasPayload=True
+[TRACE] Call: SessionService, Hash: 0x1E688C05, Method: CreateSession, 
+MethodId: 1, Token: 4
+[TRACE] Response for token 4: status=0, hasPayload=True
+[TRACE] CallMethod: service=bgs.protocol.session.v1.SessionListener, 
+hash=0x7FE36B32, method=OnSessionCreated, hasServiceKey=True
+[TRACE] Call: UserManagerService, Hash: 0x3E19268A, Method: Subscribe, 
+MethodId: 1, Token: 5
+[TRACE] Response for token 5: status=0, hasPayload=True
+[TRACE] Call: ChannelInvitationService, Hash: 0x83040608, Method: Subscribe, 
+MethodId: 1, Token: 6
+[TRACE] Response for token 6: status=0, hasPayload=True
+[TRACE] Call: AuthenticationService, Hash: 0x0DECFC01, Method: 
+GenerateWebCredentials, MethodId: 8, Token: 7
+[TRACE] Response for token 7: status=0, hasPayload=True
+[TRACE] Call: FriendService, Hash: 0xA3DDB1BD, Method: Subscribe, MethodId: 1, 
+Token: 8
+[TRACE] Response for token 8: status=0, hasPayload=True
+[TRACE] Call: ResourceService, Hash: 0xECBE75BA, Method: GetContentHandle, 
+MethodId: 1, Token: 9
+[TRACE] Response for token 9: status=0, hasPayload=True
+[TRACE] Call: PresenceService, Hash: 0xFA0796FF, Method: Update, MethodId: 3, 
+Token: 10
+[TRACE] Response for token 10: status=0, hasPayload=True
+[TRACE] Call: PresenceService, Hash: 0xFA0796FF, Method: Subscribe, MethodId: 
+1, Token: 11
+[TRACE] Response for token 11: status=0, hasPayload=True
+[TRACE] Call: PresenceService, Hash: 0xFA0796FF, Method: Subscribe, MethodId: 
+1, Token: 12
+[TRACE] Response for token 12: status=0, hasPayload=True
+[TRACE] Call: GameUtilitiesService, Hash: 0x5DBB51C2, Method: 
+ProcessClientRequest, MethodId: 1, Token: 13
+[TRACE]   attr[0]: name='Version', rawHex=(13B) 
+22-0B-32-2E-38-2E-30-2E-39-39-39-32-30
+[TRACE]     intVal=N, uintVal=N, strVal=N, msgVal=N, boolVal=N, fourccVal=N
+[TRACE]   attr[1]: name='CustomMessageId', rawHex=(2B) 10-01
+[TRACE]     intVal=N, uintVal=N, strVal=N, msgVal=N, boolVal=True, fourccVal=N
+[TRACE] CallMethod: service=bgs.protocol.channel.v1.ChannelListener, 
+hash=0xBF8C8094, method=OnUpdateChannelState, hasServiceKey=True
+[TRACE] CallMethod: service=bgs.protocol.channel.v1.ChannelListener, 
+hash=0xBF8C8094, method=OnUpdateChannelState, hasServiceKey=True
+[TRACE]   attr[2]: name='CustomMessage', rawHex=(66B) 2A-40-08-D5-A4-01-12-0B-3
+2-2E-38-2E-30-2E-39-39-39-32-30-1A-2D-43-4E-2D-39-37-65-32-32-38-30-37-39-32-38
+-35-32-61-32-35-65-33-35-36-66-63-39-38-39-37-66-38-62-63-64-35-2D-35-32-35-31-
+33-39-34-30-37
+[TRACE]     intVal=N, uintVal=N, 
+strVal=??2.8.0.99920-CN-97e2280792852a25e356fc9897f8bcd5-525139407, 
+msgVal=N, boolVal=N, fourccVal=N
+[TRACE] CallMethod: service=bgs.protocol.channel.v1.ChannelListener, 
+hash=0xBF8C8094, method=OnJoin, hasServiceKey=True
+[TRACE] CallMethod: service=bgs.protocol.channel.v1.ChannelListener, 
+hash=0xBF8C8094, method=OnJoin, hasServiceKey=True
+[TRACE]   attr[3]: name='CustomMessageDestination', rawHex=(2B) 30-00
+[TRACE]     intVal=N, uintVal=N, strVal=N, msgVal=N, boolVal=N, fourccVal=N
+[TRACE] Request raw (166B): 0A-18-0A-07-56-65-72-73-69-6F-6E-12-0D-22-0B-32-2E-
+38-2E-30-2E-39-39-39-32-30-0A-15-0A-0F-43-75-73-74-6F-6D-4D-65-73-73-61-67-65-4
+9-64-12-02-10-01-0A-53-0A-0D-43-75-73-74-6F-6D-4D-65-73-73-61-67-65-12-42-2A-40
+-08-D5-A4-01-12-0B-32-2E-38-2E-30-2E-39-39-39-32-30-1A-2D-43-4E-2D-39-37-65-32-
+32-38-30-37-39-32-38-35-32-61-32-35-65-33-35-36-66-63-39-38-39-37-66-38-62-63-6
+4-35-2D-35-32-35-31-33-39-34-30-37-0A-1E-0A-18-43-75-73-74-6F-6D-4D-65-73-73-61
+-67-65-44-65-73-74-69-6E-61-74-69-6F-6E-12-02-30-00
+[TRACE] ProcessClientRequest: messageId=-1, attributeCount=4, 
+is280Handshake=True
+[TRACE] Handling 2.8.0 version handshake, 
+version=??2.8.0.99920-CN-97e2280792852a25e356fc9897f8bcd5-525139407
+[TRACE] Built InitialLoginDataResponse: 756 bytes
+[TRACE] Sending InitialLoginData notification SYNCHRONOUSLY
+[TRACE] CallMethod: service=bgs.protocol.notification.v1.NotificationListener, 
+hash=0xE1CB2EA8, method=OnNotificationReceived, hasServiceKey=True
+[TRACE] Notification sent successfully
+[TRACE] Response for token 13: status=0, hasPayload=True
+[TRACE] 2.8.0 handshake response sent with 1 attributes
+[TRACE] Call: ConnectionSvc, Hash: 0x65446991, Method: RequestDisconnect, 
+MethodId: 7, Token: 14

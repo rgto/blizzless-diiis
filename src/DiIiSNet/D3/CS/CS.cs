@@ -3509,8 +3509,7 @@ namespace D3.CS {
           if (!element.IsInitialized) return false;
         }
         if (HasAccountId) {
-          if (!AccountId.IsInitialized) return false;
-        }
+                  }
         if (!DeprecatedAccountProfile.IsInitialized) return false;
         if (HasGuildRestrictions) {
           if (!GuildRestrictions.IsInitialized) return false;
